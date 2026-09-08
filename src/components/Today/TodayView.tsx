@@ -1,8 +1,102 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Sparkles, CheckCircle2, Check, CornerDownLeft } from 'lucide-react';
+import { Plus, Trash2, Sparkles, CheckCircle2, Check, CornerDownLeft, Clock } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
-import { formatDateHeader } from '../../utils/dateUtils';
+import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
 import { formatMetricValue } from '../../utils/formatters';
+import { TomorrowPlansSection } from './TomorrowPlansSection';
+
+function getDynamicGreeting(
+  name: string | undefined,
+  occupation: string | undefined,
+  activeDate: string,
+  today: string,
+  loggedMetricsCount: number,
+  totalMetricsCount: number,
+  eventsCount: number
+): { title: string; subtitle: string } {
+  const firstName = name?.trim() ? name.trim().split(' ')[0] : 'there';
+  const isPast = activeDate < today;
+  const isFuture = activeDate > today;
+
+  if (isPast) {
+    return {
+      title: `Looking back, ${firstName}`,
+      subtitle: `${eventsCount} ${eventsCount === 1 ? 'item' : 'items'} logged · ${formatDateHeader(activeDate)}`,
+    };
+  }
+
+  if (isFuture) {
+    return {
+      title: `Planning ahead, ${firstName}`,
+      subtitle: `${formatDateHeader(activeDate)}`,
+    };
+  }
+
+  // Today logic:
+  const now = new Date();
+  const hour = now.getHours();
+  const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+  let greeting = 'Welcome back';
+  if (hour >= 5 && hour < 12) {
+    const morningOptions = [
+      `Good morning, ${firstName}`,
+      `Rise and build, ${firstName}`,
+      `Ready to focus, ${firstName}?`,
+      `A fresh slate today, ${firstName}`,
+    ];
+    greeting = morningOptions[dayOfWeek % morningOptions.length];
+  } else if (hour >= 12 && hour < 17) {
+    const afternoonOptions = [
+      `Good afternoon, ${firstName}`,
+      `Midday momentum, ${firstName}`,
+      `Staying locked in, ${firstName}`,
+      `Making things happen, ${firstName}`,
+    ];
+    greeting = afternoonOptions[dayOfWeek % afternoonOptions.length];
+  } else if (hour >= 17 && hour < 22) {
+    const eveningOptions = [
+      `Good evening, ${firstName}`,
+      `Winding down, ${firstName}`,
+      `Reflecting on today, ${firstName}`,
+    ];
+    greeting = eveningOptions[dayOfWeek % eveningOptions.length];
+  } else {
+    greeting = `Burning the midnight oil, ${firstName}`;
+  }
+
+  let subtitle = '';
+  const occPrefix = occupation ? `${occupation} · ` : '';
+
+  if (eventsCount > 0 && loggedMetricsCount > 0) {
+    subtitle = `${occPrefix}${eventsCount} ${eventsCount === 1 ? 'accomplishment' : 'accomplishments'} & ${loggedMetricsCount}/${totalMetricsCount} habits tracked`;
+  } else if (eventsCount > 0) {
+    subtitle = `${occPrefix}${eventsCount} ${eventsCount === 1 ? 'accomplishment' : 'accomplishments'} logged today`;
+  } else if (loggedMetricsCount > 0) {
+    subtitle = `${occPrefix}${loggedMetricsCount} of ${totalMetricsCount} habits logged today`;
+  } else {
+    if (dayOfWeek === 1) {
+      subtitle = `${occPrefix}Start of a new week · Set the pace`;
+    } else if (dayOfWeek === 5) {
+      subtitle = `${occPrefix}Friday finish · Close the week strong`;
+    } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+      subtitle = `${occPrefix}Weekend rhythm · Recharge and calibrate`;
+    } else {
+      subtitle = `${occPrefix}What's the main focus for today?`;
+    }
+  }
+
+  return { title: greeting, subtitle };
+}
+
+function formatHoursMinutes(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0m';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hrs > 0 && mins > 0) return `${hrs}h ${mins}m`;
+  if (hrs > 0) return `${hrs}h`;
+  return `${mins}m`;
+}
 
 export const TodayView: React.FC = () => {
   const {
@@ -16,16 +110,14 @@ export const TodayView: React.FC = () => {
     logEvent,
     deleteEvent,
     setActiveTab,
-    settings
+    activePlans,
+    togglePlan,
+    deletePlan,
+    settings,
+    activitySummary,
   } = useTracker();
 
-  // Greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  const today = getTodayIso();
 
   // Quick event / accomplishment input state
   const [quickEventTitle, setQuickEventTitle] = useState('');
@@ -53,18 +145,57 @@ export const TodayView: React.FC = () => {
     };
   });
 
+  const loggedMetricsCount = metricValuesToday.filter((m) => m.hasLogged).length;
+  const { title: dynamicTitle, subtitle: dynamicSubtitle } = getDynamicGreeting(
+    profile?.name,
+    profile?.occupation,
+    activeDate,
+    today,
+    loggedMetricsCount,
+    visibleMetrics.length,
+    todayEvents.length
+  );
+
   return (
     <div className="view-container">
       <div className="view-header">
-        <div className="view-title-row">
+        <div className="view-title-row" style={{ flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 className="view-title">
-              {profile?.name ? `${getGreeting()}, ${profile.name.split(' ')[0]}` : formatDateHeader(activeDate)}
-            </h2>
-            <p className="view-subtitle">
-              {profile?.occupation ? `${profile.occupation} · ` : ''}{formatDateHeader(activeDate)}
-            </p>
+            <h2 className="view-title">{dynamicTitle}</h2>
+            <p className="view-subtitle">{dynamicSubtitle}</p>
           </div>
+
+          {activitySummary && activitySummary.totalActiveSeconds > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('activity')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '6px 12px',
+                cursor: 'pointer',
+                textAlign: 'right',
+                transition: 'all 0.15s ease',
+              }}
+              title="View detailed Screen Time & Activity Breakdown"
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                  <Clock size={12} style={{ color: '#ffffff' }} />
+                  <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                    {formatHoursMinutes(activitySummary.totalActiveSeconds)}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {formatHoursMinutes(activitySummary.deepWorkSeconds)} Deep Work
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -90,6 +221,86 @@ export const TodayView: React.FC = () => {
           </span>
         </button>
       </form>
+
+      {/* TODAY'S REMINDERS & PRIORITIES (FROM YESTERDAY'S PLAN) */}
+      {activePlans.length > 0 && (
+        <div className="card-panel" style={{ marginBottom: 20 }}>
+          <div className="panel-header">
+            <span className="panel-title">Today's Reminders</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              {activePlans.filter((p) => p.completed).length} of {activePlans.length} done
+            </span>
+          </div>
+
+          <div className="highlight-list">
+            {activePlans.map((plan) => (
+              <div
+                key={plan.id}
+                className="highlight-item"
+                onClick={() => togglePlan(plan.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="highlight-left">
+                  <div
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 4,
+                      border: `1px solid ${plan.completed ? '#ffffff' : 'var(--border-medium)'}`,
+                      background: plan.completed ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#000000',
+                      flexShrink: 0,
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {plan.completed && <Check size={11} strokeWidth={3} />}
+                  </div>
+
+                  <div
+                    className="highlight-title"
+                    style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                      color: plan.completed ? 'var(--text-muted)' : '#ffffff',
+                      textDecoration: plan.completed ? 'line-through' : 'none',
+                    }}
+                  >
+                    {plan.title}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={(e) => e.stopPropagation()}>
+                  {!plan.completed && (
+                    <button
+                      type="button"
+                      className="chip-btn"
+                      style={{ fontSize: '0.74rem', padding: '3px 8px', color: '#ffffff' }}
+                      onClick={async () => {
+                        await togglePlan(plan.id);
+                        await logEvent(plan.title);
+                      }}
+                      title="Mark done and log to Today's Accomplishments"
+                    >
+                      Done & Log
+                    </button>
+                  )}
+                  <button
+                    className="icon-btn"
+                    onClick={() => deletePlan(plan.id)}
+                    title="Remove"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 1. METRICS */}
       <div className="card-panel">
@@ -271,6 +482,9 @@ export const TodayView: React.FC = () => {
           </p>
         )}
       </div>
+
+      {/* 3. PLANS FOR TOMORROW */}
+      <TomorrowPlansSection />
     </div>
   );
 };

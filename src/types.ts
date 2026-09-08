@@ -75,10 +75,77 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface TomorrowPlan {
+  id: string;
+  date: string; // Target date (YYYY-MM-DD)
+  title: string;
+  completed?: boolean;
+  createdAt: string;
+}
+
+export interface ReminderSettings {
+  enabled: boolean;
+  time: string; // HH:mm format, e.g. "21:00"
+  lastNotifiedDate?: string; // YYYY-MM-DD
+}
+
+export interface OneTimeReminder {
+  id: string;
+  title: string;
+  datetime: string; // ISO string, e.g. "2026-09-09T14:30:00"
+  fired?: boolean;
+  createdAt: string;
+}
+
 export interface AppSettings {
   currencySymbol: string;
   theme: 'obsidian';
   weekStartsOnMonday: boolean;
+  reminder?: ReminderSettings;
+  oneTimeReminders?: OneTimeReminder[];
+  activityTrackingEnabled?: boolean;
+}
+
+export type ActivityCategory =
+  | 'development'
+  | 'design'
+  | 'writing'
+  | 'communication'
+  | 'research'
+  | 'entertainment'
+  | 'other';
+
+export interface ActivityAppStat {
+  appName: string;
+  durationSeconds: number;
+  category: ActivityCategory;
+}
+
+export interface ActivityProjectStat {
+  project: string;
+  durationSeconds: number;
+}
+
+export interface DailyActivitySummary {
+  date: string; // YYYY-MM-DD
+  totalActiveSeconds: number;
+  totalIdleSeconds: number;
+  deepWorkSeconds: number;
+  categoryBreakdown: Record<ActivityCategory, number>;
+  topApps: ActivityAppStat[];
+  topProjects: ActivityProjectStat[];
+  hourlyActivity: number[]; // 24 entries: seconds active per hour (0-23)
+  isTracking?: boolean;
+}
+
+export interface ActivityTrackerStatus {
+  isTracking: boolean;
+  isIdle: boolean;
+  idleSeconds: number;
+  currentApp?: string;
+  currentCategory?: ActivityCategory;
+  currentProject?: string;
+  hasAccessibilityPermission: boolean;
 }
 
 export interface AppDatabase {
@@ -90,6 +157,7 @@ export interface AppDatabase {
   notes: DailyNote[];
   goals: Goal[];
   reviews: Review[];
+  plans?: TomorrowPlan[];
   settings: AppSettings;
 }
 

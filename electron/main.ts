@@ -1,7 +1,9 @@
-import { app, BrowserWindow, globalShortcut, Menu, Tray, nativeImage, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, globalShortcut, Menu, Tray, nativeImage, ipcMain, shell, Notification } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
+import { activityTracker } from './activityTracker';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,9 +33,9 @@ function ensureStorageDirs() {
   if (!fs.existsSync(dbFilePath) && fs.existsSync(legacyDbFilePath)) {
     try {
       fs.copyFileSync(legacyDbFilePath, dbFilePath);
-      console.log('Migrated legacy database from Personal KPI to MeTric');
+      console.log('Successfully migrated database from Personal KPI to MeTric');
     } catch (e) {
-      console.error('Failed to copy legacy database', e);
+      console.error('Failed migrating legacy database', e);
     }
   }
 }
@@ -43,37 +45,37 @@ ipcMain.handle('storage:load', async () => {
   try {
     ensureStorageDirs();
     if (fs.existsSync(dbFilePath)) {
-      const content = await fs.promises.readFile(dbFilePath, 'utf-8');
-      return JSON.parse(content);
+      const data = fs.readFileSync(dbFilePath, 'utf-8');
+      return JSON.parse(data);
     }
     return null;
   } catch (err) {
-    console.error('Failed to read database file from disk', err);
+    console.error('Failed to load database from disk', err);
     return null;
   }
 });
 
-ipcMain.handle('storage:save', async (_, dbData: any) => {
+ipcMain.handle('storage:save', async (_, data: any) => {
   try {
     ensureStorageDirs();
-    const serialized = JSON.stringify(dbData, null, 2);
-    // Write primary database file
-    await fs.promises.writeFile(dbFilePath, serialized, 'utf-8');
+    fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2), 'utf-8');
 
-    // Write daily rotating backup
-    const today = new Date().toISOString().slice(0, 10);
-    const backupPath = path.join(backupsDir, `backup-${today}.json`);
-    if (!fs.existsSync(backupPath)) {
-      await fs.promises.writeFile(backupPath, serialized, 'utf-8');
+    // Create automatic daily backup if it does not exist for today
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const backupFile = path.join(backupsDir, `metric-backup-${dateStr}.json`);
+    if (!fs.existsSync(backupFile)) {
+      fs.writeFileSync(backupFile, JSON.stringify(data, null, 2), 'utf-8');
     }
+
     return true;
   } catch (err) {
-    console.error('Failed to write database file to disk', err);
+    console.error('Failed to save database to disk', err);
     return false;
   }
 });
 
-ipcMain.handle('storage:getDbPath', () => {
+ipcMain.handle('storage:getDbPath', async () => {
   return dbFilePath;
 });
 
@@ -92,13 +94,87 @@ ipcMain.handle('storage:openFolder', async () => {
   }
 });
 
+function triggerMacNotification(title: string, body: string) {
+  if (process.platform !== 'darwin') return;
+  const safeTitle = (title || 'MeTric').replace(/["\\]/g, '\\$&');
+  const safeBody = (body || '').replace(/["\\]/g, '\\$&');
+  const script = `display notification "${safeBody}" with title "${safeTitle}" sound name "Glass"`;
+  exec(`osascript -e '${script}'`, (err) => {
+    if (err) console.error('AppleScript notification fallback error:', err);
+  });
+}
+
+ipcMain.handle('notification:show', async (_, { title, body }: { title: string; body: string }) => {
+  let displayed = false;
+  try {
+    if (Notification.isSupported()) {
+      const notif = new Notification({
+        title: title || 'MeTric',
+        body: body || '',
+        silent: false,
+        sound: 'Glass',
+      });
+      notif.on('click', () => {
+        if (mainWindow) {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      });
+      notif.show();
+      displayed = true;
+    }
+  } catch (err) {
+    console.error('Failed to show native notification', err);
+  }
+
+  // On macOS, always also trigger system notification to guarantee audible chime and visual banner
+  // even if Notification Center silences unnotarized or development binaries
+  if (process.platform === 'darwin') {
+    triggerMacNotification(title, body);
+  }
+
+  return true;
+});
+
+ipcMain.handle('notification:openSettings', async () => {
+  if (process.platform === 'darwin') {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.notifications');
+    return true;
+  }
+  return false;
+});
+
+// Activity Tracking IPC
+ipcMain.handle('activity:getSummary', async (_, dateStr?: string) => {
+  return activityTracker.getSummaryForDate(dateStr);
+});
+
+ipcMain.handle('activity:toggle', async (_, enabled?: boolean) => {
+  return activityTracker.toggleTracking(enabled);
+});
+
+ipcMain.handle('activity:getStatus', async () => {
+  return activityTracker.getStatus();
+});
+
 function createWindow() {
+  const iconPngPath = path.join(__dirname, '../build/icon.png');
+  if (app.dock && fs.existsSync(iconPngPath)) {
+    try {
+      app.dock.setIcon(iconPngPath);
+    } catch (e) {
+      console.warn('Could not set dock icon:', e);
+    }
+  }
+
   mainWindow = new BrowserWindow({
     width: 1140,
     height: 800,
     minWidth: 840,
     minHeight: 620,
     title: 'MeTric',
+    icon: fs.existsSync(iconPngPath) ? iconPngPath : undefined,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 13 },
     backgroundColor: '#000000',
@@ -209,6 +285,7 @@ function createTray() {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  activityTracker.init();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -219,6 +296,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  activityTracker.destroy();
 });
 
 app.on('window-all-closed', () => {

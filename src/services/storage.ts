@@ -13,6 +13,8 @@ declare global {
       saveDatabase: (data: AppDatabase) => Promise<boolean>;
       getDbPath: () => Promise<string>;
       openDataFolder: () => Promise<boolean>;
+      showNotification?: (title: string, body: string) => Promise<boolean>;
+      openNotificationSettings?: () => Promise<boolean>;
       isElectron: boolean;
     };
   }

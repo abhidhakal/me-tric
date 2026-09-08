@@ -8,8 +8,11 @@ import {
   DailyNote,
   Goal,
   Review,
+  TomorrowPlan,
   DashboardCategorySummary,
-  ReviewComputedStats
+  ReviewComputedStats,
+  DailyActivitySummary,
+  ActivityTrackerStatus,
 } from '../types';
 import { TrackerApi } from './api';
 import { MacDiskStorageAdapter } from './storage';
@@ -286,6 +289,53 @@ export class LocalTrackerApi implements TrackerApi {
     }
   }
 
+  // --- Plans for Tomorrow / Daily Planning ---
+
+  async getPlansForDate(date: string): Promise<TomorrowPlan[]> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    return this.db.plans.filter((p) => p.date === date);
+  }
+
+  async addPlan(plan: { date: string; title: string }): Promise<TomorrowPlan> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    const newPlan: TomorrowPlan = {
+      id: `plan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      date: plan.date,
+      title: plan.title.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    this.db.plans.push(newPlan);
+    await MacDiskStorageAdapter.save(this.db);
+    return newPlan;
+  }
+
+  async togglePlan(planId: string): Promise<TomorrowPlan | null> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    const plan = this.db.plans.find((p) => p.id === planId);
+    if (plan) {
+      plan.completed = !plan.completed;
+      await MacDiskStorageAdapter.save(this.db);
+      return { ...plan };
+    }
+    return null;
+  }
+
+  async deletePlan(planId: string): Promise<boolean> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    const prevLen = this.db.plans.length;
+    this.db.plans = this.db.plans.filter((p) => p.id !== planId);
+    if (this.db.plans.length !== prevLen) {
+      await MacDiskStorageAdapter.save(this.db);
+      return true;
+    }
+    return false;
+  }
+
   // --- Goals ---
 
   async getGoals(): Promise<Goal[]> {
@@ -391,6 +441,65 @@ export class LocalTrackerApi implements TrackerApi {
       endDate,
       this.db.settings.currencySymbol
     );
+  }
+
+  // --- Activity & Screen Time Tracking ---
+
+  async getActivitySummary(date?: string): Promise<DailyActivitySummary> {
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.getActivitySummary) {
+      try {
+        return await (window as any).electronAPI.getActivitySummary(date);
+      } catch (err) {
+        console.error('Error fetching activity summary from Electron', err);
+      }
+    }
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    return {
+      date: targetDate,
+      totalActiveSeconds: 0,
+      totalIdleSeconds: 0,
+      deepWorkSeconds: 0,
+      categoryBreakdown: {
+        development: 0,
+        design: 0,
+        writing: 0,
+        communication: 0,
+        research: 0,
+        entertainment: 0,
+        other: 0,
+      },
+      topApps: [],
+      topProjects: [],
+      hourlyActivity: new Array(24).fill(0),
+      isTracking: false,
+    };
+  }
+
+  async toggleActivityTracking(enabled?: boolean): Promise<boolean> {
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.toggleActivityTracking) {
+      try {
+        return await (window as any).electronAPI.toggleActivityTracking(enabled);
+      } catch (err) {
+        console.error('Error toggling activity tracking', err);
+      }
+    }
+    return false;
+  }
+
+  async getActivityStatus(): Promise<ActivityTrackerStatus> {
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.getActivityStatus) {
+      try {
+        return await (window as any).electronAPI.getActivityStatus();
+      } catch (err) {
+        console.error('Error getting activity status', err);
+      }
+    }
+    return {
+      isTracking: false,
+      isIdle: false,
+      idleSeconds: 0,
+      hasAccessibilityPermission: false,
+    };
   }
 }
 

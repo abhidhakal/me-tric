@@ -6,14 +6,19 @@ import {
   DailyNote,
   Goal,
   Review,
+  TomorrowPlan,
   AppSettings,
   AppDatabase,
-  UserProfile
+  UserProfile,
+  DailyActivitySummary,
+  ActivityTrackerStatus,
+  OneTimeReminder,
 } from '../types';
 import { localApi } from '../services/localApi';
-import { getTodayIso } from '../utils/dateUtils';
+import { getTodayIso, shiftDate } from '../utils/dateUtils';
+import { sendDesktopNotification } from '../utils/notifications';
 
-export type ActiveTab = 'today' | 'dashboard' | 'metrics' | 'goals' | 'reviews';
+export type ActiveTab = 'today' | 'dashboard' | 'activity' | 'metrics' | 'goals' | 'reviews';
 
 interface ToastState {
   id: string;
@@ -48,17 +53,29 @@ interface TrackerContextType {
   todayEvents: LifeEvent[];
   todayNote: DailyNote | null;
   goals: Goal[];
+  tomorrowPlans: TomorrowPlan[];
+  activePlans: TomorrowPlan[];
   settings: AppSettings;
   isLoading: boolean;
   storageLocation: string;
+  activitySummary: DailyActivitySummary | null;
+  activityStatus: ActivityTrackerStatus | null;
 
   // Actions
   openDataFolder: () => Promise<void>;
+  toggleActivityTracking: (enabled?: boolean) => Promise<boolean>;
   logMetric: (metricId: string, value: number, note?: string) => Promise<void>;
   logEvent: (title: string, description?: string, category?: string) => Promise<void>;
   saveNote: (content: string) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  addPlan: (title: string, date?: string) => Promise<void>;
+  togglePlan: (id: string) => Promise<void>;
+  deletePlan: (id: string) => Promise<void>;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
+  sendTestNotification: () => Promise<boolean>;
+  addOneTimeReminder: (title: string, datetime: string) => Promise<void>;
+  deleteOneTimeReminder: (id: string) => Promise<void>;
   saveMetric: (metric: Omit<Metric, 'id' | 'createdAt'> & { id?: string }) => Promise<void>;
   deleteMetric: (id: string) => Promise<void>;
   saveGoal: (goal: Omit<Goal, 'id' | 'createdAt'> & { id?: string }) => Promise<void>;
@@ -90,12 +107,16 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [todayEvents, setTodayEvents] = useState<LifeEvent[]>([]);
   const [todayNote, setTodayNote] = useState<DailyNote | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [tomorrowPlans, setTomorrowPlans] = useState<TomorrowPlan[]>([]);
+  const [activePlans, setActivePlans] = useState<TomorrowPlan[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
     currencySymbol: 'Rs.',
     theme: 'obsidian',
     weekStartsOnMonday: true,
   });
   const [storageLocation, setStorageLocation] = useState<string>('');
+  const [activitySummary, setActivitySummary] = useState<DailyActivitySummary | null>(null);
+  const [activityStatus, setActivityStatus] = useState<ActivityTrackerStatus | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -149,11 +170,43 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const note = await localApi.getDailyNote(activeDate);
       setTodayNote(note);
+
+      const tomorrowDate = shiftDate(activeDate, 1);
+      const plansForTomorrow = await localApi.getPlansForDate(tomorrowDate);
+      setTomorrowPlans(plansForTomorrow);
+
+      const plansForToday = await localApi.getPlansForDate(activeDate);
+      setActivePlans(plansForToday);
+
+      const activity = await localApi.getActivitySummary(activeDate);
+      setActivitySummary(activity);
+
+      const status = await localApi.getActivityStatus();
+      setActivityStatus(status);
     } catch (e) {
       console.error('Error refreshing tracker data', e);
     } finally {
       setIsLoading(false);
     }
+  }, [activeDate]);
+
+  // Live polling of activity summary and status when viewing today
+  useEffect(() => {
+    if (activeDate !== getTodayIso()) return;
+
+    const pollActivity = async () => {
+      try {
+        const summary = await localApi.getActivitySummary(activeDate);
+        setActivitySummary(summary);
+        const status = await localApi.getActivityStatus();
+        setActivityStatus(status);
+      } catch (err) {
+        // quiet ignore
+      }
+    };
+
+    const interval = setInterval(pollActivity, 6000);
+    return () => clearInterval(interval);
   }, [activeDate]);
 
   useEffect(() => {
@@ -306,6 +359,146 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
     return success;
   };
 
+  const addPlan = async (title: string, date?: string) => {
+    const targetDate = date || shiftDate(activeDate, 1);
+    await localApi.addPlan({ date: targetDate, title });
+    showToast('Priority planned for tomorrow');
+    await refreshData();
+  };
+
+  const togglePlan = async (id: string) => {
+    await localApi.togglePlan(id);
+    await refreshData();
+  };
+
+  const deletePlan = async (id: string) => {
+    await localApi.deletePlan(id);
+    showToast('Plan removed', 'info');
+    await refreshData();
+  };
+
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    const updated = await localApi.updateSettings(newSettings);
+    setSettings({ ...updated });
+    showToast('Settings saved');
+  };
+
+  const sendTestNotification = async (): Promise<boolean> => {
+    const tomorrowDate = shiftDate(getTodayIso(), 1);
+    const plans = await localApi.getPlansForDate(tomorrowDate);
+    let body = "Review and check your reminders or plan ahead for tomorrow in MeTric.";
+    if (plans.length > 0) {
+      body = `You have ${plans.length} ${plans.length === 1 ? 'reminder' : 'reminders'} set for tomorrow: "${plans[0].title}"${plans.length > 1 ? ` + ${plans.length - 1} more` : ''}.`;
+    }
+    const success = await sendDesktopNotification("MeTric · Reminders", body);
+    if (success) {
+      showToast('Desktop notification sent!', 'success');
+    } else {
+      showToast('Notification triggered. Check macOS notifications settings if not visible.', 'info');
+    }
+    return success;
+  };
+
+  // One-time reminder actions
+  const addOneTimeReminder = async (title: string, datetime: string) => {
+    const newReminder: OneTimeReminder = {
+      id: `otr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      datetime,
+      fired: false,
+      createdAt: new Date().toISOString(),
+    };
+    const existing = settings.oneTimeReminders || [];
+    const updated: AppSettings = {
+      ...settings,
+      oneTimeReminders: [...existing, newReminder],
+    };
+    await localApi.updateSettings(updated);
+    setSettings(updated);
+    showToast(`Reminder set for ${new Date(datetime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
+  };
+
+  const deleteOneTimeReminder = async (id: string) => {
+    const existing = settings.oneTimeReminders || [];
+    const updated: AppSettings = {
+      ...settings,
+      oneTimeReminders: existing.filter(r => r.id !== id),
+    };
+    await localApi.updateSettings(updated);
+    setSettings(updated);
+  };
+
+  // Reminder Notification Scheduler (daily recurring + one-time)
+  useEffect(() => {
+    const checkReminder = async () => {
+      const now = new Date();
+
+      // 1. Daily recurring reminder
+      if (settings.reminder?.enabled && settings.reminder.time) {
+        const currentHours = String(now.getHours()).padStart(2, '0');
+        const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${currentHours}:${currentMinutes}`;
+        const todayStr = getTodayIso();
+
+        if (currentTimeStr >= settings.reminder.time && settings.reminder.lastNotifiedDate !== todayStr) {
+          const tomorrowDate = shiftDate(todayStr, 1);
+          const plans = await localApi.getPlansForDate(tomorrowDate);
+
+          let bodyText = "Review and check your reminders or plan ahead for tomorrow in MeTric.";
+          if (plans.length > 0) {
+            bodyText = `You have ${plans.length} ${plans.length === 1 ? 'reminder' : 'reminders'} set for tomorrow: "${plans[0].title}"${plans.length > 1 ? ` + ${plans.length - 1} more` : ''}.`;
+          }
+
+          await sendDesktopNotification("MeTric · Reminders", bodyText);
+
+          const updatedSettings: AppSettings = {
+            ...settings,
+            reminder: {
+              ...settings.reminder,
+              lastNotifiedDate: todayStr,
+            },
+          };
+          await localApi.updateSettings(updatedSettings);
+          setSettings(updatedSettings);
+        }
+      }
+
+      // 2. One-time reminders
+      const oneTimeList = settings.oneTimeReminders || [];
+      const unfired = oneTimeList.filter(r => !r.fired);
+      let anyFired = false;
+      for (const reminder of unfired) {
+        const reminderTime = new Date(reminder.datetime);
+        if (now >= reminderTime) {
+          await sendDesktopNotification('MeTric · Reminder', reminder.title);
+          reminder.fired = true;
+          anyFired = true;
+        }
+      }
+      if (anyFired) {
+        // Clean up fired reminders from settings
+        const updatedSettings: AppSettings = {
+          ...settings,
+          oneTimeReminders: oneTimeList.filter(r => !r.fired),
+        };
+        await localApi.updateSettings(updatedSettings);
+        setSettings(updatedSettings);
+      }
+    };
+
+    const interval = setInterval(checkReminder, 15000);
+    checkReminder();
+    return () => clearInterval(interval);
+  }, [settings]);
+
+  const toggleActivityTracking = async (enabled?: boolean) => {
+    const res = await localApi.toggleActivityTracking(enabled);
+    showToast(res ? 'Screen time tracking resumed' : 'Screen time tracking paused', 'info');
+    const status = await localApi.getActivityStatus();
+    setActivityStatus(status);
+    return res;
+  };
+
   return (
     <TrackerContext.Provider
       value={{
@@ -331,15 +524,27 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         todayEvents,
         todayNote,
         goals,
+        tomorrowPlans,
+        activePlans,
         settings,
         isLoading,
         storageLocation,
+        activitySummary,
+        activityStatus,
         openDataFolder: () => localApi.openDataFolder(),
+        toggleActivityTracking,
         logMetric,
         logEvent,
         saveNote,
         deleteEntry,
         deleteEvent,
+        addPlan,
+        togglePlan,
+        deletePlan,
+        updateSettings,
+        sendTestNotification,
+        addOneTimeReminder,
+        deleteOneTimeReminder,
         saveMetric,
         deleteMetric,
         saveGoal,

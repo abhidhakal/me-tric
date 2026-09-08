@@ -5,11 +5,14 @@ import {
   DailyNote,
   Goal,
   Review,
+  TomorrowPlan,
   AppDatabase,
   AppSettings,
   UserProfile,
   DashboardCategorySummary,
-  ReviewComputedStats
+  ReviewComputedStats,
+  DailyActivitySummary,
+  ActivityTrackerStatus,
 } from '../types';
 
 /**
@@ -53,6 +56,12 @@ export interface TrackerApi {
   getDailyNote(date: string): Promise<DailyNote | null>;
   saveDailyNote(date: string, content: string): Promise<DailyNote>;
 
+  // Plans for Tomorrow / Daily Planning
+  getPlansForDate(date: string): Promise<TomorrowPlan[]>;
+  addPlan(plan: { date: string; title: string }): Promise<TomorrowPlan>;
+  togglePlan(planId: string): Promise<TomorrowPlan | null>;
+  deletePlan(planId: string): Promise<boolean>;
+
   // Goals
   getGoals(): Promise<Goal[]>;
   saveGoal(goal: Omit<Goal, 'id' | 'createdAt'> & { id?: string }): Promise<Goal>;
@@ -79,4 +88,9 @@ export interface TrackerApi {
     startDate: string,
     endDate: string
   ): Promise<ReviewComputedStats>;
+
+  // Activity & Screen Time Tracking
+  getActivitySummary(date?: string): Promise<DailyActivitySummary>;
+  toggleActivityTracking(enabled?: boolean): Promise<boolean>;
+  getActivityStatus(): Promise<ActivityTrackerStatus>;
 }

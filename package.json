@@ -10,8 +10,9 @@
     "dev": "vite",
     "dev:electron": "ELECTRON=true vite",
     "build": "tsc -b && vite build",
+    "generate:icons": "node scripts/generate-icons.cjs",
     "build:electron": "tsc -b && ELECTRON=true vite build && cp electron/preload.cjs dist-electron/preload.cjs",
-    "build:app": "npm run build:electron && electron-builder --mac dir",
+    "build:app": "npm run build:electron && electron-builder --mac dir && codesign --force --deep --sign - release/mac-arm64/MeTric.app",
     "start": "npx electron dist-electron/main.js",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -28,12 +29,16 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
       "target": [
         {
           "target": "dir",
           "arch": ["arm64"]
         }
       ]
+    },
+    "win": {
+      "icon": "build/icon.ico"
     }
   },
   "dependencies": {

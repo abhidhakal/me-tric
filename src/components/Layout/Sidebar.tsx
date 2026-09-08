@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import {
   Calendar,
+  Clock,
   BarChart3,
   Sliders,
   Target,
@@ -33,10 +34,11 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; shortcut: string }[] = [
     { id: 'today', label: 'Today', icon: <Calendar size={18} />, shortcut: '⌘1' },
-    { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} />, shortcut: '⌘2' },
-    { id: 'metrics', label: 'Metrics', icon: <Sliders size={18} />, shortcut: '⌘3' },
-    { id: 'goals', label: 'Goals', icon: <Target size={18} />, shortcut: '⌘4' },
-    { id: 'reviews', label: 'Reviews', icon: <BookOpen size={18} />, shortcut: '⌘5' },
+    { id: 'activity', label: 'Activity', icon: <Clock size={18} />, shortcut: '⌘2' },
+    { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} />, shortcut: '⌘3' },
+    { id: 'metrics', label: 'Metrics', icon: <Sliders size={18} />, shortcut: '⌘4' },
+    { id: 'goals', label: 'Goals', icon: <Target size={18} />, shortcut: '⌘5' },
+    { id: 'reviews', label: 'Reviews', icon: <BookOpen size={18} />, shortcut: '⌘6' },
   ];
 
   const handleExport = async () => {
