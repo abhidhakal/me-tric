@@ -29,35 +29,35 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 
 ## Key Features
 
-### ⚡ Standalone Accomplishment Logging
-* Open the app, type what you completed, and hit <kbd>Enter</kbd>.
-* Generates a clean chronological timeline of wins and completed tasks for every date.
-* Automatically rolls into weekly and monthly review summaries.
+### Standalone Accomplishment Logging
+- Open the app, type what you completed, and hit <kbd>Enter</kbd>.
+- Generates a clean chronological timeline of wins and completed tasks for every date.
+- Automatically rolls into weekly and monthly review summaries.
 
-### 🎯 Intelligent Pacing Breakdown Engine
-* Set a high-level target (e.g., *12 books/year*, *250 deep work hours/year*).
-* MeTric automatically opens a multi-choice pacing breakdown modal:
-  * **Monthly Milestone** (`total / 12`)
-  * **Weekly Pacing** (`total / 52`)
-  * **Daily Habit** (`total / 365`)
-* Fine-tune targets inline and confirm with <kbd>Enter</kbd> to generate balanced sub-goals across every cadence.
+### Intelligent Pacing Breakdown Engine
+- Set a high-level target (e.g., *12 books/year*, *250 deep work hours/year*).
+- MeTric automatically opens a multi-choice pacing breakdown modal:
+  - **Monthly Milestone** (`total / 12`)
+  - **Weekly Pacing** (`total / 52`)
+  - **Daily Habit** (`total / 365`)
+- Fine-tune targets inline and confirm with <kbd>Enter</kbd> to generate balanced sub-goals across every cadence.
 
-### 📊 Tactical Metrics & Steppers
-* Track durations, numbers, currencies, and boolean habits (*Deep Work*, *Exercise*, *Reading*, *Savings*, *Sleep*).
-* Fast 1-click increment chips (`+15m`, `+30m`, `+1h`, `+1k`, `+1`) directly on today's dashboard.
-* Visual weekly trend tracks showing daily progress across Monday through Sunday.
+### Tactical Metrics & Steppers
+- Track durations, numbers, currencies, and boolean habits (*Deep Work*, *Exercise*, *Reading*, *Savings*, *Sleep*).
+- Fast 1-click increment chips (`+15m`, `+30m`, `+1h`, `+1k`, `+1`) directly on today's dashboard.
+- Visual weekly trend tracks showing daily progress across Monday through Sunday.
 
-### 🔒 100% Local-First & Private
-* Your data lives entirely on your machine in `~/Library/Application Support/MeTric/database.json`.
-* Instant cold starts, zero latency, works completely offline without internet access.
-* One-click JSON backup export and import for seamless migrations.
+### 100% Local-First & Private
+- Your data lives entirely on your machine in `~/Library/Application Support/MeTric/database.json`.
+- Instant cold starts, zero latency, works completely offline without internet access.
+- One-click JSON backup export and import for seamless migrations.
 
-### 🍎 Native macOS Aesthetics
-* Designed to respect macOS Human Interface Guidelines:
-  * Sleek 38px native header height perfectly aligned with traffic light controls.
-  * Borderless, floating main content workspace.
-  * Keyboard-first shortcuts (<kbd>Cmd+1</kbd> to <kbd>Cmd+5</kbd> for quick view switching, <kbd>Enter</kbd> badges on primary actions).
-  * Monochromatic obsidian palette with subtle glassmorphism and crisp typography (*Inter* + *Instrument Serif*).
+### Native macOS Craftsmanship
+- Designed to respect macOS Human Interface Guidelines:
+  - Sleek 38px native header height perfectly aligned with traffic light controls.
+  - Borderless, floating main content workspace.
+  - Keyboard-first shortcuts (<kbd>Cmd+1</kbd> to <kbd>Cmd+5</kbd> for quick view switching, <kbd>Enter</kbd> badges on primary actions).
+  - Monochromatic obsidian palette with subtle glassmorphism and crisp typography (*Inter* + *Instrument Serif*).
 
 ---
 
