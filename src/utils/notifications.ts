@@ -19,7 +19,7 @@ export async function sendDesktopNotification(title: string, body: string): Prom
       if (Notification.permission === 'granted') {
         new Notification(title, {
           body,
-          icon: '/favicon.ico',
+          icon: '/icon.png',
         });
         return true;
       } else if (Notification.permission !== 'denied') {
@@ -27,7 +27,7 @@ export async function sendDesktopNotification(title: string, body: string): Prom
         if (permission === 'granted') {
           new Notification(title, {
             body,
-            icon: '/favicon.ico',
+            icon: '/icon.png',
           });
           return true;
         }

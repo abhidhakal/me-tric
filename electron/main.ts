@@ -104,13 +104,26 @@ function triggerMacNotification(title: string, body: string) {
   });
 }
 
+function getAppNotificationIcon(): string | undefined {
+  const candidates = [
+    path.join(__dirname, '../dist/icon.png'),
+    path.join(__dirname, '../../public/icon.png'),
+    path.join(__dirname, '../build/icon.png'),
+    path.join(app.getAppPath(), 'dist/icon.png'),
+    path.join(app.getAppPath(), 'build/icon.png'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
 ipcMain.handle('notification:show', async (_, { title, body }: { title: string; body: string }) => {
   let displayed = false;
   try {
     if (Notification.isSupported()) {
+      const iconPath = getAppNotificationIcon();
       const notif = new Notification({
         title: title || 'MeTric',
         body: body || '',
+        icon: iconPath ? nativeImage.createFromPath(iconPath) : undefined,
         silent: false,
         sound: 'Glass',
       });
@@ -128,9 +141,8 @@ ipcMain.handle('notification:show', async (_, { title, body }: { title: string; 
     console.error('Failed to show native notification', err);
   }
 
-  // On macOS, always also trigger system notification to guarantee audible chime and visual banner
-  // even if Notification Center silences unnotarized or development binaries
-  if (process.platform === 'darwin') {
+  // Fallback to AppleScript only if native Notification is not supported or failed to display
+  if (!displayed && process.platform === 'darwin') {
     triggerMacNotification(title, body);
   }
 
