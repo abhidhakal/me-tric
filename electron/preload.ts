@@ -13,5 +13,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getActivitySummary: (date?: string) => ipcRenderer.invoke('activity:getSummary', date),
   toggleActivityTracking: (enabled?: boolean) => ipcRenderer.invoke('activity:toggle', enabled),
   getActivityStatus: () => ipcRenderer.invoke('activity:getStatus'),
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  downloadUpdate: (url: string) => ipcRenderer.invoke('updater:download', url),
+  installUpdate: (customPath?: string) => ipcRenderer.invoke('updater:install', customPath),
+  onUpdateProgress: (callback: (progress: any) => void) => {
+    ipcRenderer.on('updater:progress', (_, p) => callback(p));
+  },
+  onUpdateAvailable: (callback: (info: any) => void) => {
+    ipcRenderer.on('updater:available', (_, i) => callback(i));
+  },
+  onOpenUpdateModal: (callback: () => void) => {
+    ipcRenderer.on('updater:open-modal', () => callback());
+  },
   isElectron: true,
 });

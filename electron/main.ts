@@ -4,6 +4,7 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 import { activityTracker } from './activityTracker';
+import { appUpdater } from './updater';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -176,6 +177,23 @@ ipcMain.handle('activity:getStatus', async () => {
   return activityTracker.getStatus();
 });
 
+// In-App Auto Updater IPC
+ipcMain.handle('updater:check', async () => {
+  return appUpdater.checkForUpdates();
+});
+
+ipcMain.handle('updater:download', async (_, downloadUrl: string) => {
+  return appUpdater.downloadUpdate(downloadUrl, (progress) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('updater:progress', progress);
+    }
+  });
+});
+
+ipcMain.handle('updater:install', async (_, customPath?: string) => {
+  return appUpdater.installAndRestart(customPath);
+});
+
 function createWindow() {
   const iconPngPath = path.join(__dirname, '../build/icon.png');
   const iconIcoPath = path.join(__dirname, '../build/icon.ico');
@@ -268,6 +286,15 @@ function createTray() {
           }
         },
       },
+      {
+        label: 'Check for Updates...',
+        click: () => {
+          if (!mainWindow) createWindow();
+          mainWindow?.show();
+          mainWindow?.focus();
+          mainWindow?.webContents.send('updater:open-modal');
+        },
+      },
       { type: 'separator' },
       {
         label: 'Quit',
@@ -296,6 +323,18 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   activityTracker.init();
+
+  // Background update check after app startup
+  setTimeout(async () => {
+    try {
+      const updateInfo = await appUpdater.checkForUpdates();
+      if (updateInfo.hasUpdate && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('updater:available', updateInfo);
+      }
+    } catch (err) {
+      console.log('Background update check note:', err);
+    }
+  }, 5000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -216,3 +216,22 @@ export interface ReviewComputedStats {
   events: LifeEvent[];
   headlineSummary: string[];
 }
+
+export interface UpdateInfo {
+  hasUpdate: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  releaseName: string;
+  releaseNotes: string;
+  releaseDate: string;
+  releaseUrl: string;
+  assetName: string;
+  assetSize: number;
+  downloadUrl: string;
+}
+
+export interface UpdateProgress {
+  percent: number;
+  transferredBytes: number;
+  totalBytes: number;
+}
