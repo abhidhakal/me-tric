@@ -15,7 +15,7 @@
     "generate:icons": "node scripts/generate-icons.cjs",
     "build:electron": "tsc -b && ELECTRON=true vite build && cp electron/preload.cjs dist-electron/preload.cjs",
     "build:app": "npm run build:electron && electron-builder --mac dir --arm64 && codesign --force --deep --sign - release/mac-arm64/MeTric.app",
-    "build:dmg": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --x64",
+    "build:dmg": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --x64 --publish never",
     "start": "npx electron dist-electron/main.js",
     "lint": "oxlint",
     "preview": "vite preview"
