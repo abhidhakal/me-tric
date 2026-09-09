@@ -30,10 +30,8 @@ export class LocalTrackerApi implements TrackerApi {
 
   async init(): Promise<AppDatabase> {
     this.db = await MacDiskStorageAdapter.load();
-    if (!this.db.metrics || this.db.metrics.length === 0) {
-      const initial = createInitialDatabase();
-      this.db.metrics = initial.metrics;
-      await MacDiskStorageAdapter.save(this.db);
+    if (!this.db.metrics) {
+      this.db.metrics = [];
     }
 
     // Seamlessly migrate any legacy settings.oneTimeReminders into db.plans

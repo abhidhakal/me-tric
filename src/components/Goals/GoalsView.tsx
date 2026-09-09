@@ -29,7 +29,11 @@ export const GoalsView: React.FC = () => {
             <p className="view-subtitle">Active targets & milestones</p>
           </div>
 
-          <button className="btn-quick-log" onClick={() => setIsModalOpen(true)}>
+          <button
+            className="btn-primary"
+            onClick={() => setIsModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '7px 14px' }}
+          >
             <Plus size={15} strokeWidth={2.5} />
             <span>New Goal</span>
           </button>
