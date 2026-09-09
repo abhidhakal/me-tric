@@ -225,7 +225,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'k' || (e.shiftKey && e.key.toLowerCase() === 'l'))) {
         e.preventDefault();
         openQuickLog();
       } else if (e.key === 'l' && !isInput && !e.metaKey && !e.ctrlKey) {
@@ -238,7 +238,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // If running inside Electron, listen for macOS global Cmd+Shift+L shortcut
+    // If triggered from Tray menu ("+ Quick Log")
     if (typeof window !== 'undefined' && (window as any).electronAPI?.onTriggerQuickLog) {
       (window as any).electronAPI.onTriggerQuickLog(() => {
         openQuickLog();

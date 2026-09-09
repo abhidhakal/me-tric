@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, Menu, Tray, nativeImage, ipcMain, shell, Notification } from 'electron';
+import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, shell, Notification } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
@@ -221,22 +221,6 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   }
 
-  // Register Global System Shortcut (Cmd + Shift + L)
-  try {
-    globalShortcut.register('CommandOrControl+Shift+L', () => {
-      if (!mainWindow) {
-        createWindow();
-      } else {
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.show();
-        mainWindow.focus();
-        mainWindow.webContents.send('trigger-quick-log');
-      }
-    });
-  } catch (e) {
-    console.error('Failed to register global shortcut', e);
-  }
-
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -250,7 +234,7 @@ function createTray() {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: '+ Quick Log (Cmd+Shift+L)',
+        label: '+ Quick Log',
         click: () => {
           if (!mainWindow) {
             createWindow();
@@ -321,7 +305,6 @@ app.whenReady().then(() => {
 });
 
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
   activityTracker.destroy();
 });
 
