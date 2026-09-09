@@ -1,20 +1,20 @@
-import React, { useState, useRef } from 'react';
-import { Bell, Trash2, Check, CornerDownLeft, X, Clock, Repeat } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bell, Trash2, Check, CornerDownLeft, X, Clock, Repeat, Calendar } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
-import { formatDateHeader, shiftDate } from '../../utils/dateUtils';
-import { ReminderPopover } from './ReminderPopover';
+import { formatDateHeader, shiftDate, getTodayIso } from '../../utils/dateUtils';
+import { ReminderPopover, ReminderSchedule, formatScheduleLabel } from './ReminderPopover';
 import { requestNotificationPermission } from '../../utils/notifications';
 
-export const TomorrowPlansSection: React.FC = () => {
+export const RemindersSection: React.FC = () => {
   const {
     activeDate,
     tomorrowPlans,
+    allPlans,
     addPlan,
     togglePlan,
     deletePlan,
     settings,
     updateSettings,
-    deleteOneTimeReminder,
   } = useTracker();
 
   const [newPlanText, setNewPlanText] = useState('');
@@ -24,15 +24,66 @@ export const TomorrowPlansSection: React.FC = () => {
   const tomorrowIso = shiftDate(activeDate, 1);
   const tomorrowFormatted = formatDateHeader(tomorrowIso);
 
+  const [schedule, setSchedule] = useState<ReminderSchedule>({
+    date: tomorrowIso,
+    time: undefined,
+    label: 'Tomorrow',
+  });
+
+  // Keep default schedule aligned when activeDate changes
+  useEffect(() => {
+    setSchedule({
+      date: shiftDate(activeDate, 1),
+      time: undefined,
+      label: 'Tomorrow',
+    });
+  }, [activeDate]);
+
   const reminderEnabled = Boolean(settings.reminder?.enabled);
   const reminderTime = settings.reminder?.time || '21:00';
-  const oneTimeReminders = settings.oneTimeReminders || [];
 
-  const handleAddPlan = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Other pending timed reminders (not on tomorrow)
+  const otherUpcomingReminders = (allPlans || []).filter(
+    (p) => !p.completed && p.datetime && p.date !== tomorrowIso
+  ).sort((a, b) => {
+    const timeA = a.datetime ? new Date(a.datetime).getTime() : 0;
+    const timeB = b.datetime ? new Date(b.datetime).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  const handleAddPlan = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!newPlanText.trim()) return;
-    await addPlan(newPlanText.trim(), tomorrowIso);
+
+    await addPlan(newPlanText.trim(), schedule.date, schedule.time);
     setNewPlanText('');
+    setSchedule({
+      date: tomorrowIso,
+      time: undefined,
+      label: 'Tomorrow',
+    });
+    setIsPopoverOpen(false);
+  };
+
+  const handleDirectSubmitFromPopover = async (targetSchedule: ReminderSchedule) => {
+    if (!newPlanText.trim()) return;
+    await addPlan(newPlanText.trim(), targetSchedule.date, targetSchedule.time);
+    setNewPlanText('');
+    setSchedule({
+      date: tomorrowIso,
+      time: undefined,
+      label: 'Tomorrow',
+    });
+    setIsPopoverOpen(false);
+  };
+
+  const handleResetSchedule = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSchedule({
+      date: tomorrowIso,
+      time: undefined,
+      label: 'Tomorrow',
+    });
   };
 
   const handleDailyToggle = async () => {
@@ -59,21 +110,7 @@ export const TomorrowPlansSection: React.FC = () => {
     });
   };
 
-  const formatReminderDatetime = (datetime: string) => {
-    const d = new Date(datetime);
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
-    const dateStr = datetime.slice(0, 10);
-
-    let dayLabel = '';
-    if (dateStr === todayStr) dayLabel = 'Today';
-    else if (dateStr === tomorrowStr) dayLabel = 'Tomorrow';
-    else dayLabel = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-
-    const timeLabel = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return `${dayLabel}, ${timeLabel}`;
-  };
+  const isCustomSchedule = Boolean(schedule.time || schedule.date !== tomorrowIso);
 
   return (
     <div className="card-panel" style={{ marginTop: 14 }}>
@@ -87,8 +124,8 @@ export const TomorrowPlansSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Input Row with in-field Remind Me button & Popover */}
-      <form onSubmit={handleAddPlan} style={{ display: 'flex', gap: 10, marginBottom: tomorrowPlans.length > 0 || oneTimeReminders.length > 0 ? 12 : 0 }}>
+      {/* Input Row with Integrated Schedule Button & Popover */}
+      <form onSubmit={handleAddPlan} style={{ display: 'flex', gap: 10, marginBottom: tomorrowPlans.length > 0 || otherUpcomingReminders.length > 0 ? 12 : 0 }}>
         <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
           <input
             type="text"
@@ -96,15 +133,15 @@ export const TomorrowPlansSection: React.FC = () => {
             style={{
               width: '100%',
               padding: '10px 14px',
-              paddingRight: '116px',
+              paddingRight: isCustomSchedule ? '170px' : '116px',
               fontSize: '0.9rem',
             }}
-            placeholder="Add a reminder for tomorrow... (Press Enter)"
+            placeholder="Add a reminder or plan... (Press Enter)"
             value={newPlanText}
             onChange={(e) => setNewPlanText(e.target.value)}
           />
 
-          {/* Embedded Remind Me Button */}
+          {/* Embedded Schedule Selector Chip/Button */}
           <button
             ref={buttonRef}
             type="button"
@@ -117,18 +154,39 @@ export const TomorrowPlansSection: React.FC = () => {
               gap: 5,
               padding: '4px 9px',
               borderRadius: 6,
-              border: '1px solid var(--border-subtle)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              color: 'var(--text-secondary)',
+              border: isCustomSchedule ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid var(--border-subtle)',
+              background: isCustomSchedule ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+              color: isCustomSchedule ? '#ffffff' : 'var(--text-secondary)',
               fontSize: '0.76rem',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
+              maxWidth: 155,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
-            title="Set a one-time reminder with date & time"
+            title={isCustomSchedule ? `Scheduled: ${schedule.label} (Click to change)` : "Set date & time alert"}
           >
-            <Bell size={12} style={{ color: 'var(--text-muted)' }} />
-            <span>Remind me</span>
+            <Clock size={12} style={{ color: isCustomSchedule ? '#ffffff' : 'var(--text-muted)', flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {schedule.label}
+            </span>
+            {isCustomSchedule && (
+              <span
+                onClick={handleResetSchedule}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginLeft: 2,
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
+                title="Reset to Tomorrow"
+              >
+                <X size={11} />
+              </span>
+            )}
           </button>
 
           {/* Date/Time Picker Popover */}
@@ -136,7 +194,10 @@ export const TomorrowPlansSection: React.FC = () => {
             isOpen={isPopoverOpen}
             onClose={() => setIsPopoverOpen(false)}
             anchorRef={buttonRef}
-            prefillTitle={newPlanText.trim() || undefined}
+            currentSchedule={schedule}
+            onSelectSchedule={(newSched) => setSchedule(newSched)}
+            currentText={newPlanText}
+            onDirectSubmit={handleDirectSubmitFromPopover}
           />
         </div>
 
@@ -146,54 +207,93 @@ export const TomorrowPlansSection: React.FC = () => {
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px', fontWeight: 600, fontSize: '0.86rem' }}
         >
           <span>Add</span>
-          <span className="btn-enter-badge" title="Press Enter to add plan">
+          <span className="btn-enter-badge" title="Press Enter to add reminder">
             <CornerDownLeft size={11} strokeWidth={2.5} />
           </span>
         </button>
       </form>
 
-      {/* Pending One-Time Reminders */}
-      {oneTimeReminders.length > 0 && (
-        <div style={{ marginBottom: tomorrowPlans.length > 0 ? 10 : 0 }}>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6, fontWeight: 600 }}>
-            Scheduled Alerts
+      {/* ── Other Scheduled Alerts (Upcoming/Different Dates) ── */}
+      {otherUpcomingReminders.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Clock size={11} />
+            <span>Scheduled Alerts</span>
           </div>
           <div className="highlight-list" style={{ gap: 4 }}>
-            {oneTimeReminders
-              .slice()
-              .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
-              .map((r) => (
-                <div
-                  key={r.id}
-                  className="highlight-item"
-                  style={{ padding: '6px 10px' }}
-                >
-                  <div className="highlight-left" style={{ gap: 8 }}>
-                    <Clock size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {r.title}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        {formatReminderDatetime(r.datetime)}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    className="icon-btn"
-                    onClick={(e) => { e.stopPropagation(); deleteOneTimeReminder(r.id); }}
-                    title="Remove reminder"
-                    style={{ color: 'var(--text-muted)' }}
+            {otherUpcomingReminders.map((r) => (
+              <div
+                key={r.id}
+                className="highlight-item"
+                onClick={() => togglePlan(r.id)}
+                style={{ cursor: 'pointer', padding: '6px 10px' }}
+              >
+                <div className="highlight-left" style={{ gap: 8 }}>
+                  <div
+                    style={{
+                      width: 17,
+                      height: 17,
+                      borderRadius: 4,
+                      border: `1px solid ${r.completed ? '#ffffff' : 'var(--border-medium)'}`,
+                      background: r.completed ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#000000',
+                      flexShrink: 0,
+                    }}
                   >
-                    <X size={13} />
-                  </button>
+                    {r.completed && <Check size={11} strokeWidth={3} />}
+                  </div>
+
+                  <div style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: '0.86rem',
+                        fontWeight: 500,
+                        color: r.completed ? 'var(--text-muted)' : '#ffffff',
+                        textDecoration: r.completed ? 'line-through' : 'none',
+                      }}
+                    >
+                      {r.title}
+                    </span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        padding: '1px 5px',
+                        borderRadius: 4,
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.68rem',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      <Clock size={10} style={{ color: 'var(--text-muted)' }} />
+                      {formatScheduleLabel(r.date, r.time)}
+                    </span>
+                  </div>
                 </div>
-              ))}
+
+                <button
+                  className="icon-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deletePlan(r.id);
+                  }}
+                  title="Remove reminder"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Tomorrow's Plan List */}
+      {/* ── Tomorrow's Reminders List ── */}
       {tomorrowPlans.length > 0 ? (
         <div className="highlight-list">
           {tomorrowPlans.map((plan) => (
@@ -222,17 +322,39 @@ export const TomorrowPlansSection: React.FC = () => {
                   {plan.completed && <Check size={11} strokeWidth={3} />}
                 </div>
 
-                <div
-                  className="highlight-title"
-                  style={{
-                    fontSize: '0.88rem',
-                    fontWeight: 500,
-                    color: plan.completed ? 'var(--text-muted)' : '#ffffff',
-                    textDecoration: plan.completed ? 'line-through' : 'none',
-                    transition: 'all 0.12s ease',
-                  }}
-                >
-                  {plan.title}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                  <span
+                    className="highlight-title"
+                    style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 500,
+                      color: plan.completed ? 'var(--text-muted)' : '#ffffff',
+                      textDecoration: plan.completed ? 'line-through' : 'none',
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {plan.title}
+                  </span>
+
+                  {plan.time && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.7rem',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <Clock size={10} style={{ color: 'var(--text-muted)' }} />
+                      {formatScheduleLabel(plan.date, plan.time)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -242,7 +364,7 @@ export const TomorrowPlansSection: React.FC = () => {
                   e.stopPropagation();
                   deletePlan(plan.id);
                 }}
-                title="Remove priority"
+                title="Remove reminder"
                 style={{ color: 'var(--text-muted)' }}
               >
                 <Trash2 size={13} />
@@ -250,9 +372,9 @@ export const TomorrowPlansSection: React.FC = () => {
             </div>
           ))}
         </div>
-      ) : oneTimeReminders.length === 0 ? (
+      ) : otherUpcomingReminders.length === 0 ? (
         <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '6px 0 2px 2px' }}>
-          No reminders set yet. Add items above or use "Remind me" for timed alerts.
+          No reminders set yet. Type above and press Enter, or choose a time to get alerted.
         </p>
       ) : null}
 
@@ -277,7 +399,7 @@ export const TomorrowPlansSection: React.FC = () => {
             <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
               {reminderEnabled
                 ? `Repeats every day at ${reminderTime}`
-                : 'Get a daily notification for tomorrow\'s plans'}
+                : "Get a daily notification for tomorrow's plans"}
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   AppSettings,
   UserProfile,
   DashboardCategorySummary,
+  DashboardSummaryStats,
   ReviewComputedStats,
   DailyActivitySummary,
   ActivityTrackerStatus,
@@ -56,11 +57,13 @@ export interface TrackerApi {
   getDailyNote(date: string): Promise<DailyNote | null>;
   saveDailyNote(date: string, content: string): Promise<DailyNote>;
 
-  // Plans for Tomorrow / Daily Planning
+  // Plans for Tomorrow / Daily Planning & Reminders
   getPlansForDate(date: string): Promise<TomorrowPlan[]>;
-  addPlan(plan: { date: string; title: string }): Promise<TomorrowPlan>;
+  getAllPlans(): Promise<TomorrowPlan[]>;
+  addPlan(plan: { date: string; title: string; time?: string; datetime?: string }): Promise<TomorrowPlan>;
   togglePlan(planId: string): Promise<TomorrowPlan | null>;
   deletePlan(planId: string): Promise<boolean>;
+  markPlanNotified(planId: string): Promise<boolean>;
 
   // Goals
   getGoals(): Promise<Goal[]>;
@@ -80,6 +83,7 @@ export interface TrackerApi {
     categories: DashboardCategorySummary[];
     startDate: string;
     endDate: string;
+    summaryStats?: DashboardSummaryStats;
   }>;
 
   getReviewStats(

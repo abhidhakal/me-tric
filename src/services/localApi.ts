@@ -10,6 +10,7 @@ import {
   Review,
   TomorrowPlan,
   DashboardCategorySummary,
+  DashboardSummaryStats,
   ReviewComputedStats,
   DailyActivitySummary,
   ActivityTrackerStatus,
@@ -34,6 +35,28 @@ export class LocalTrackerApi implements TrackerApi {
       this.db.metrics = initial.metrics;
       await MacDiskStorageAdapter.save(this.db);
     }
+
+    // Seamlessly migrate any legacy settings.oneTimeReminders into db.plans
+    if (this.db.settings?.oneTimeReminders && this.db.settings.oneTimeReminders.length > 0) {
+      if (!this.db.plans) this.db.plans = [];
+      for (const otr of this.db.settings.oneTimeReminders) {
+        const date = otr.datetime ? otr.datetime.slice(0, 10) : '';
+        const time = otr.datetime && otr.datetime.length >= 16 ? otr.datetime.slice(11, 16) : undefined;
+        this.db.plans.push({
+          id: otr.id || `migrated-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          date: date || new Date().toISOString().slice(0, 10),
+          title: otr.title,
+          time,
+          datetime: otr.datetime,
+          completed: false,
+          notified: Boolean(otr.fired),
+          createdAt: otr.createdAt || new Date().toISOString(),
+        });
+      }
+      this.db.settings.oneTimeReminders = [];
+      await MacDiskStorageAdapter.save(this.db);
+    }
+
     this.isInitialized = true;
     return this.db;
   }
@@ -289,7 +312,7 @@ export class LocalTrackerApi implements TrackerApi {
     }
   }
 
-  // --- Plans for Tomorrow / Daily Planning ---
+  // --- Plans for Tomorrow / Daily Planning & Reminders ---
 
   async getPlansForDate(date: string): Promise<TomorrowPlan[]> {
     await this.ensureLoaded();
@@ -297,14 +320,23 @@ export class LocalTrackerApi implements TrackerApi {
     return this.db.plans.filter((p) => p.date === date);
   }
 
-  async addPlan(plan: { date: string; title: string }): Promise<TomorrowPlan> {
+  async getAllPlans(): Promise<TomorrowPlan[]> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    return [...this.db.plans];
+  }
+
+  async addPlan(plan: { date: string; title: string; time?: string; datetime?: string }): Promise<TomorrowPlan> {
     await this.ensureLoaded();
     if (!this.db.plans) this.db.plans = [];
     const newPlan: TomorrowPlan = {
       id: `plan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       date: plan.date,
       title: plan.title.trim(),
+      time: plan.time,
+      datetime: plan.datetime,
       completed: false,
+      notified: false,
       createdAt: new Date().toISOString(),
     };
     this.db.plans.push(newPlan);
@@ -330,6 +362,18 @@ export class LocalTrackerApi implements TrackerApi {
     const prevLen = this.db.plans.length;
     this.db.plans = this.db.plans.filter((p) => p.id !== planId);
     if (this.db.plans.length !== prevLen) {
+      await MacDiskStorageAdapter.save(this.db);
+      return true;
+    }
+    return false;
+  }
+
+  async markPlanNotified(planId: string): Promise<boolean> {
+    await this.ensureLoaded();
+    if (!this.db.plans) this.db.plans = [];
+    const plan = this.db.plans.find((p) => p.id === planId);
+    if (plan) {
+      plan.notified = true;
       await MacDiskStorageAdapter.save(this.db);
       return true;
     }
@@ -413,6 +457,7 @@ export class LocalTrackerApi implements TrackerApi {
     categories: DashboardCategorySummary[];
     startDate: string;
     endDate: string;
+    summaryStats?: DashboardSummaryStats;
   }> {
     await this.ensureLoaded();
     return computeDashboard(

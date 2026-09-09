@@ -55,6 +55,7 @@ interface TrackerContextType {
   goals: Goal[];
   tomorrowPlans: TomorrowPlan[];
   activePlans: TomorrowPlan[];
+  allPlans: TomorrowPlan[];
   settings: AppSettings;
   isLoading: boolean;
   storageLocation: string;
@@ -69,7 +70,8 @@ interface TrackerContextType {
   saveNote: (content: string) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
-  addPlan: (title: string, date?: string) => Promise<void>;
+  addPlan: (title: string, date?: string, time?: string, datetime?: string) => Promise<void>;
+  addReminder: (title: string, date?: string, time?: string, datetime?: string) => Promise<void>;
   togglePlan: (id: string) => Promise<void>;
   deletePlan: (id: string) => Promise<void>;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
@@ -109,6 +111,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [goals, setGoals] = useState<Goal[]>([]);
   const [tomorrowPlans, setTomorrowPlans] = useState<TomorrowPlan[]>([]);
   const [activePlans, setActivePlans] = useState<TomorrowPlan[]>([]);
+  const [allPlans, setAllPlans] = useState<TomorrowPlan[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
     currencySymbol: 'Rs.',
     theme: 'obsidian',
@@ -177,6 +180,9 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const plansForToday = await localApi.getPlansForDate(activeDate);
       setActivePlans(plansForToday);
+
+      const all = await localApi.getAllPlans();
+      setAllPlans(all);
 
       const activity = await localApi.getActivitySummary(activeDate);
       setActivitySummary(activity);
@@ -359,12 +365,24 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
     return success;
   };
 
-  const addPlan = async (title: string, date?: string) => {
+  const addPlan = async (title: string, date?: string, time?: string, datetime?: string) => {
     const targetDate = date || shiftDate(activeDate, 1);
-    await localApi.addPlan({ date: targetDate, title });
-    showToast('Priority planned for tomorrow');
+    const fullDatetime = datetime || (date && time ? `${date}T${time}:00` : undefined);
+    await localApi.addPlan({
+      date: targetDate,
+      title: title.trim(),
+      time,
+      datetime: fullDatetime,
+    });
+    if (time) {
+      showToast(`Reminder scheduled for ${targetDate === getTodayIso() ? 'today' : targetDate} at ${time}`);
+    } else {
+      showToast('Reminder added');
+    }
     await refreshData();
   };
+
+  const addReminder = addPlan;
 
   const togglePlan = async (id: string) => {
     await localApi.togglePlan(id);
@@ -373,7 +391,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deletePlan = async (id: string) => {
     await localApi.deletePlan(id);
-    showToast('Plan removed', 'info');
+    showToast('Reminder removed', 'info');
     await refreshData();
   };
 
@@ -399,36 +417,18 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
     return success;
   };
 
-  // One-time reminder actions
+  // Legacy backwards-compatibility wrappers
   const addOneTimeReminder = async (title: string, datetime: string) => {
-    const newReminder: OneTimeReminder = {
-      id: `otr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      title,
-      datetime,
-      fired: false,
-      createdAt: new Date().toISOString(),
-    };
-    const existing = settings.oneTimeReminders || [];
-    const updated: AppSettings = {
-      ...settings,
-      oneTimeReminders: [...existing, newReminder],
-    };
-    await localApi.updateSettings(updated);
-    setSettings(updated);
-    showToast(`Reminder set for ${new Date(datetime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
+    const date = datetime.slice(0, 10);
+    const time = datetime.length >= 16 ? datetime.slice(11, 16) : undefined;
+    await addPlan(title, date, time, datetime);
   };
 
   const deleteOneTimeReminder = async (id: string) => {
-    const existing = settings.oneTimeReminders || [];
-    const updated: AppSettings = {
-      ...settings,
-      oneTimeReminders: existing.filter(r => r.id !== id),
-    };
-    await localApi.updateSettings(updated);
-    setSettings(updated);
+    await deletePlan(id);
   };
 
-  // Reminder Notification Scheduler (daily recurring + one-time)
+  // Reminder Notification Scheduler (daily recurring + timed reminders from unified plans)
   useEffect(() => {
     const checkReminder = async () => {
       const now = new Date();
@@ -463,33 +463,30 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       }
 
-      // 2. One-time reminders
-      const oneTimeList = settings.oneTimeReminders || [];
-      const unfired = oneTimeList.filter(r => !r.fired);
-      let anyFired = false;
-      for (const reminder of unfired) {
-        const reminderTime = new Date(reminder.datetime);
-        if (now >= reminderTime) {
+      // 2. Timed reminders from unified plans
+      try {
+        const allPlans = await localApi.getAllPlans();
+        const dueReminders = allPlans.filter(
+          (p) => p.datetime && !p.notified && !p.completed && now >= new Date(p.datetime)
+        );
+
+        for (const reminder of dueReminders) {
           await sendDesktopNotification('MeTric · Reminder', reminder.title);
-          reminder.fired = true;
-          anyFired = true;
+          await localApi.markPlanNotified(reminder.id);
         }
-      }
-      if (anyFired) {
-        // Clean up fired reminders from settings
-        const updatedSettings: AppSettings = {
-          ...settings,
-          oneTimeReminders: oneTimeList.filter(r => !r.fired),
-        };
-        await localApi.updateSettings(updatedSettings);
-        setSettings(updatedSettings);
+
+        if (dueReminders.length > 0) {
+          await refreshData();
+        }
+      } catch (err) {
+        console.error('Error checking timed reminders', err);
       }
     };
 
     const interval = setInterval(checkReminder, 15000);
     checkReminder();
     return () => clearInterval(interval);
-  }, [settings]);
+  }, [settings, refreshData]);
 
   const toggleActivityTracking = async (enabled?: boolean) => {
     const res = await localApi.toggleActivityTracking(enabled);
@@ -526,6 +523,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         goals,
         tomorrowPlans,
         activePlans,
+        allPlans,
         settings,
         isLoading,
         storageLocation,
@@ -539,6 +537,7 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteEntry,
         deleteEvent,
         addPlan,
+        addReminder,
         togglePlan,
         deletePlan,
         updateSettings,

@@ -4,7 +4,9 @@ import {
   LifeEvent,
   Goal,
   MetricRollup,
+  TrendBucket,
   DashboardCategorySummary,
+  DashboardSummaryStats,
   ReviewComputedStats,
   MetricCategory
 } from '../types';
@@ -15,7 +17,11 @@ import {
   getWeekRange,
   getMonthRange,
   getQuarterRange,
-  getYearRange
+  getYearRange,
+  shiftDate,
+  parseIsoDate,
+  formatToIso,
+  getTodayIso
 } from './dateUtils';
 import { formatMetricValue, formatDuration } from './formatters';
 
@@ -27,7 +33,8 @@ export function computeMetricRollup(
   entries: MetricEntry[],
   startDate: string,
   endDate: string,
-  currencySymbol: string = 'Rs.'
+  currencySymbol: string = 'Rs.',
+  period: 'week' | 'month' | 'quarter' | 'year' = 'week'
 ): MetricRollup {
   const matchingEntries = entries.filter(
     (e) => e.metricId === metric.id && e.date >= startDate && e.date <= endDate
@@ -43,8 +50,11 @@ export function computeMetricRollup(
     totalValue = matchingEntries.reduce((acc, curr) => acc + curr.value, 0);
   }
 
-  // Daily values for sparklines / trend bars
   const days = getDaysList(startDate, endDate);
+  const periodDays = Math.max(days.length, 1);
+  const today = getTodayIso();
+
+  // 1. Daily values (legacy & sparkline)
   const dailyValues = days.map((d) => {
     const dayEntries = matchingEntries.filter((e) => e.date === d);
     const dayTotal = dayEntries.reduce((sum, e) => sum + e.value, 0);
@@ -56,21 +66,137 @@ export function computeMetricRollup(
     };
   });
 
-  // Calculate target for this period if defined
-  let targetValue = metric.targetValue;
-  if (metric.type === 'duration' && metric.targetValue) {
-    // Target value is usually given in hours (e.g. 25h/week), convert to minutes
-    targetValue = metric.targetValue * 60;
-  }
-
+  // 2. Scaled target based on period
+  let targetValue: number | undefined;
   let progressPercent: number | undefined;
-  if (targetValue && targetValue > 0) {
-    progressPercent = Math.min(Math.round((totalValue / targetValue) * 100), 999);
+  let formattedTarget: string | undefined;
+
+  if (metric.targetValue) {
+    const baseTarget = metric.type === 'duration' ? metric.targetValue * 60 : metric.targetValue;
+    const targetPeriod = metric.targetPeriod || 'week';
+    const daysInTargetPeriod =
+      targetPeriod === 'day' ? 1 :
+      targetPeriod === 'week' ? 7 :
+      targetPeriod === 'month' ? 30.4375 :
+      targetPeriod === 'quarter' ? 91.25 : 365.25;
+
+    const factor = periodDays / daysInTargetPeriod;
+    targetValue = Math.max(1, Math.round(baseTarget * factor));
+
+    if (targetValue > 0) {
+      progressPercent = Math.min(Math.round((totalValue / targetValue) * 100), 999);
+    }
+    formattedTarget = formatMetricValue(targetValue, metric, currencySymbol);
   }
 
-  let formattedTarget: string | undefined;
-  if (targetValue) {
-    formattedTarget = formatMetricValue(targetValue, metric, currencySymbol);
+  // 3. Pace Status
+  let paceStatus: 'ahead' | 'on_track' | 'behind' | 'none' = 'none';
+  let paceMessage: string | undefined;
+
+  if (targetValue && targetValue > 0) {
+    if (today < startDate) {
+      paceStatus = 'none';
+      paceMessage = 'Upcoming';
+    } else {
+      const effectiveEndDate = today < endDate ? today : endDate;
+      const elapsedDays = Math.min(periodDays, Math.max(1, getDaysList(startDate, effectiveEndDate).length));
+      const elapsedPercent = elapsedDays / periodDays;
+      const expectedProgress = targetValue * elapsedPercent;
+
+      if (totalValue >= expectedProgress * 1.05) {
+        paceStatus = 'ahead';
+        paceMessage = 'Ahead of pace';
+      } else if (totalValue >= expectedProgress * 0.85) {
+        paceStatus = 'on_track';
+        paceMessage = 'On track';
+      } else {
+        paceStatus = 'behind';
+        paceMessage = 'Behind pace';
+      }
+    }
+  }
+
+  // 4. Trend Buckets according to period
+  let trendBuckets: TrendBucket[] = [];
+
+  if (period === 'week') {
+    trendBuckets = days.map((d) => {
+      const dayEntries = matchingEntries.filter((e) => e.date === d);
+      const dayTotal = dayEntries.reduce((sum, e) => sum + e.value, 0);
+      return {
+        label: getDayShortName(d),
+        subLabel: d.slice(5),
+        dateStart: d,
+        dateEnd: d,
+        value: dayTotal,
+        formattedValue: formatMetricValue(dayTotal, metric, currencySymbol),
+        isCurrent: d === today,
+      };
+    });
+  } else if (period === 'month') {
+    // 4-5 weekly milestone buckets
+    for (let i = 0; i < days.length; i += 7) {
+      const chunk = days.slice(i, i + 7);
+      const start = chunk[0];
+      const end = chunk[chunk.length - 1];
+      const weekIdx = Math.floor(i / 7) + 1;
+      const bEntries = matchingEntries.filter((e) => e.date >= start && e.date <= end);
+      const bTotal = metric.type === 'rating'
+        ? (bEntries.length > 0 ? Math.round((bEntries.reduce((s, e) => s + e.value, 0) / bEntries.length) * 10) / 10 : 0)
+        : bEntries.reduce((s, e) => s + e.value, 0);
+
+      trendBuckets.push({
+        label: `W${weekIdx}`,
+        subLabel: `${start.slice(5)} – ${end.slice(5)}`,
+        dateStart: start,
+        dateEnd: end,
+        value: bTotal,
+        formattedValue: formatMetricValue(bTotal, metric, currencySymbol),
+        isCurrent: today >= start && today <= end,
+      });
+    }
+  } else if (period === 'quarter') {
+    // 3 month buckets
+    for (let idx = 0; idx < 3; idx++) {
+      const d = parseIsoDate(startDate);
+      d.setMonth(d.getMonth() + idx);
+      const mRange = getMonthRange(formatToIso(d));
+      const bEntries = matchingEntries.filter((e) => e.date >= mRange.start && e.date <= mRange.end);
+      const bTotal = metric.type === 'rating'
+        ? (bEntries.length > 0 ? Math.round((bEntries.reduce((s, e) => s + e.value, 0) / bEntries.length) * 10) / 10 : 0)
+        : bEntries.reduce((s, e) => s + e.value, 0);
+
+      trendBuckets.push({
+        label: mRange.monthName.slice(0, 3),
+        subLabel: mRange.monthName,
+        dateStart: mRange.start,
+        dateEnd: mRange.end,
+        value: bTotal,
+        formattedValue: formatMetricValue(bTotal, metric, currencySymbol),
+        isCurrent: today >= mRange.start && today <= mRange.end,
+      });
+    }
+  } else {
+    // 12 months for year
+    for (let idx = 0; idx < 12; idx++) {
+      const d = parseIsoDate(startDate);
+      d.setMonth(idx);
+      const mRange = getMonthRange(formatToIso(d));
+      const bEntries = matchingEntries.filter((e) => e.date >= mRange.start && e.date <= mRange.end);
+      const bTotal = metric.type === 'rating'
+        ? (bEntries.length > 0 ? Math.round((bEntries.reduce((s, e) => s + e.value, 0) / bEntries.length) * 10) / 10 : 0)
+        : bEntries.reduce((s, e) => s + e.value, 0);
+
+      trendBuckets.push({
+        label: mRange.monthName.slice(0, 3),
+        subLabel: mRange.monthName,
+        dateStart: mRange.start,
+        dateEnd: mRange.end,
+        value: bTotal,
+        formattedValue: formatMetricValue(bTotal, metric, currencySymbol),
+        isCurrent: today >= mRange.start && today <= mRange.end,
+      });
+    }
   }
 
   return {
@@ -82,6 +208,9 @@ export function computeMetricRollup(
     formattedValue: formatMetricValue(totalValue, metric, currencySymbol),
     formattedTarget,
     dailyValues,
+    trendBuckets,
+    paceStatus,
+    paceMessage,
   };
 }
 
@@ -99,6 +228,7 @@ export function computeDashboard(
   categories: DashboardCategorySummary[];
   startDate: string;
   endDate: string;
+  summaryStats: DashboardSummaryStats;
 } {
   let startDate = '';
   let endDate = '';
@@ -108,22 +238,31 @@ export function computeDashboard(
     const w = getWeekRange(activeDate);
     startDate = w.start;
     endDate = w.end;
-    dateRangeLabel = `Week ${w.weekNum} (${w.start} to ${w.end})`;
+    const startObj = parseIsoDate(w.start);
+    const endObj = parseIsoDate(w.end);
+    const startMonth = startObj.toLocaleDateString('en-US', { month: 'short' });
+    const endMonth = endObj.toLocaleDateString('en-US', { month: 'short' });
+    const rangeText = startMonth === endMonth
+      ? `${startMonth} ${startObj.getDate()} – ${endObj.getDate()}, ${startObj.getFullYear()}`
+      : `${startMonth} ${startObj.getDate()} – ${endMonth} ${endObj.getDate()}, ${endObj.getFullYear()}`;
+    dateRangeLabel = `Week ${w.weekNum} · ${rangeText}`;
   } else if (period === 'month') {
     const m = getMonthRange(activeDate);
     startDate = m.start;
     endDate = m.end;
-    dateRangeLabel = `${m.monthName} ${m.year}`;
+    dateRangeLabel = `${m.monthName} ${m.year} · ${m.start} to ${m.end}`;
   } else if (period === 'quarter') {
     const q = getQuarterRange(activeDate);
     startDate = q.start;
     endDate = q.end;
-    dateRangeLabel = `Q${q.quarter} ${q.year}`;
+    const startObj = parseIsoDate(q.start);
+    const endObj = parseIsoDate(q.end);
+    dateRangeLabel = `Q${q.quarter} ${q.year} · ${startObj.toLocaleDateString('en-US', { month: 'short' })} – ${endObj.toLocaleDateString('en-US', { month: 'short' })} ${q.year}`;
   } else {
     const y = getYearRange(activeDate);
     startDate = y.start;
     endDate = y.end;
-    dateRangeLabel = `Year ${y.year}`;
+    dateRangeLabel = `Full Year ${y.year} · ${y.start} to ${y.end}`;
   }
 
   const categoryOrder: MetricCategory[] = ['Work', 'Health', 'Learning', 'Money', 'Personal'];
@@ -133,7 +272,7 @@ export function computeDashboard(
     const catMetrics = metrics.filter((m) => m.category === cat && m.enabled !== false);
     if (catMetrics.length > 0) {
       const rollups = catMetrics.map((m) =>
-        computeMetricRollup(m, entries, startDate, endDate, currencySymbol)
+        computeMetricRollup(m, entries, startDate, endDate, currencySymbol, period)
       );
       categories.push({
         category: cat,
@@ -142,11 +281,32 @@ export function computeDashboard(
     }
   });
 
+  const matchingEntriesInWindow = entries.filter((e) => e.date >= startDate && e.date <= endDate);
+  const uniqueActiveDays = new Set(matchingEntriesInWindow.map((e) => e.date)).size;
+  const days = getDaysList(startDate, endDate);
+  const periodDays = Math.max(days.length, 1);
+  const allRollups = categories.flatMap((c) => c.metrics);
+  const metricsWithTargets = allRollups.filter((r) => r.targetValue && r.targetValue > 0);
+  const onTrackCount = metricsWithTargets.filter((r) => r.paceStatus === 'ahead' || r.paceStatus === 'on_track').length;
+  const completionRate = metricsWithTargets.length > 0
+    ? Math.round(metricsWithTargets.reduce((acc, r) => acc + (r.progressPercent || 0), 0) / metricsWithTargets.length)
+    : 0;
+
+  const summaryStats: DashboardSummaryStats = {
+    totalEntries: matchingEntriesInWindow.length,
+    activeDays: uniqueActiveDays,
+    totalDays: periodDays,
+    onTrackCount,
+    totalTrackedMetrics: metricsWithTargets.length,
+    completionRate,
+  };
+
   return {
     dateRangeLabel,
     categories,
     startDate,
     endDate,
+    summaryStats,
   };
 }
 

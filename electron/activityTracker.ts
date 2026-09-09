@@ -412,13 +412,13 @@ export class ActivityTracker {
     if (!title) return '';
 
     // VS Code / Cursor: "FileName — ProjectName — Visual Studio Code" or "FileName — ProjectName"
-    const vscodeMatch = title.match(/^(?:.*?—\s*)?([a-zA-Z0-9_\-\.]+)\s*—\s*(?:Visual Studio Code|Code|Cursor|Antigravity IDE)/i);
+    const vscodeMatch = title.match(/^(?:.*?—\s*)?([a-zA-Z0-9_.-]+)\s*—\s*(?:Visual Studio Code|Code|Cursor|Antigravity IDE)/i);
     if (vscodeMatch && vscodeMatch[1]) {
       return vscodeMatch[1].trim();
     }
 
     // Terminal / iTerm: "[ProjectName] — zsh" or "user@host: ~/path/project"
-    const termMatch = title.match(/\[([a-zA-Z0-9_\-\.]+)\]/);
+    const termMatch = title.match(/\[([a-zA-Z0-9_.-]+)\]/);
     if (termMatch && termMatch[1]) {
       return termMatch[1].trim();
     }

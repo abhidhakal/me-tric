@@ -1,6 +1,8 @@
 {
   "name": "metric",
   "productName": "MeTric",
+  "description": "Personal productivity and metric tracking desktop application",
+  "author": "Abhinav Dhakal",
   "private": true,
   "version": "1.0.0",
   "license": "MIT",
@@ -12,7 +14,8 @@
     "build": "tsc -b && vite build",
     "generate:icons": "node scripts/generate-icons.cjs",
     "build:electron": "tsc -b && ELECTRON=true vite build && cp electron/preload.cjs dist-electron/preload.cjs",
-    "build:app": "npm run build:electron && electron-builder --mac dir && codesign --force --deep --sign - release/mac-arm64/MeTric.app",
+    "build:app": "npm run build:electron && electron-builder --mac dir --arm64 && codesign --force --deep --sign - release/mac-arm64/MeTric.app",
+    "build:dmg": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --x64",
     "start": "npx electron dist-electron/main.js",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -20,6 +23,7 @@
   "build": {
     "appId": "com.abhinav.metric",
     "productName": "MeTric",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -32,10 +36,37 @@
       "icon": "build/icon.icns",
       "target": [
         {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
           "target": "dir",
           "arch": ["arm64"]
         }
       ]
+    },
+    "dmg": {
+      "title": "${productName}",
+      "icon": "build/icon.icns",
+      "background": "build/background.png",
+      "iconSize": 96,
+      "contents": [
+        {
+          "x": 140,
+          "y": 190,
+          "type": "file"
+        },
+        {
+          "x": 400,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
       "icon": "build/icon.ico"

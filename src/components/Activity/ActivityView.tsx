@@ -86,6 +86,7 @@ export const ActivityView: React.FC = () => {
     activitySummary,
     activityStatus,
     toggleActivityTracking,
+    openDataFolder,
   } = useTracker();
 
   const today = getTodayIso();
@@ -639,7 +640,7 @@ export const ActivityView: React.FC = () => {
           <button
             type="button"
             className="chip-btn"
-            onClick={() => useTracker().openDataFolder()}
+            onClick={() => openDataFolder()}
             style={{ fontSize: '0.76rem', padding: '5px 10px', color: 'var(--text-secondary)' }}
           >
             <span>View Storage Folder</span>

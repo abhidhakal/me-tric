@@ -1,6 +1,6 @@
 export type MetricType = 'duration' | 'number' | 'currency' | 'boolean' | 'rating';
 export type MetricCategory = 'Work' | 'Health' | 'Learning' | 'Money' | 'Personal';
-export type TargetPeriod = 'day' | 'week' | 'month' | 'year';
+export type TargetPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year';
 
 export interface UserProfile {
   name: string;
@@ -79,9 +79,14 @@ export interface TomorrowPlan {
   id: string;
   date: string; // Target date (YYYY-MM-DD)
   title: string;
+  time?: string; // Optional HH:mm (e.g. "14:30")
+  datetime?: string; // Optional full ISO string for timed reminders (e.g. "2026-09-09T14:30:00")
   completed?: boolean;
+  notified?: boolean; // Whether desktop notification has fired for timed reminder
   createdAt: string;
 }
+
+export type ReminderItem = TomorrowPlan;
 
 export interface ReminderSettings {
   enabled: boolean;
@@ -161,6 +166,16 @@ export interface AppDatabase {
   settings: AppSettings;
 }
 
+export interface TrendBucket {
+  label: string;
+  subLabel?: string;
+  dateStart?: string;
+  dateEnd?: string;
+  value: number;
+  formattedValue: string;
+  isCurrent?: boolean;
+}
+
 export interface MetricRollup {
   metric: Metric;
   totalValue: number;
@@ -170,6 +185,18 @@ export interface MetricRollup {
   formattedValue: string;
   formattedTarget?: string;
   dailyValues?: { date: string; dayLabel: string; value: number; formattedValue: string }[];
+  trendBuckets?: TrendBucket[];
+  paceStatus?: 'ahead' | 'on_track' | 'behind' | 'none';
+  paceMessage?: string;
+}
+
+export interface DashboardSummaryStats {
+  totalEntries: number;
+  activeDays: number;
+  totalDays: number;
+  onTrackCount: number;
+  totalTrackedMetrics: number;
+  completionRate: number;
 }
 
 export interface DashboardCategorySummary {

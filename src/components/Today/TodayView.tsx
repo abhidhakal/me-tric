@@ -3,7 +3,7 @@ import { Plus, Trash2, Sparkles, CheckCircle2, Check, CornerDownLeft, Clock } fr
 import { useTracker } from '../../context/TrackerContext';
 import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
 import { formatMetricValue } from '../../utils/formatters';
-import { TomorrowPlansSection } from './TomorrowPlansSection';
+import { RemindersSection } from './RemindersSection';
 
 function getDynamicGreeting(
   name: string | undefined,
@@ -259,16 +259,37 @@ export const TodayView: React.FC = () => {
                     {plan.completed && <Check size={11} strokeWidth={3} />}
                   </div>
 
-                  <div
-                    className="highlight-title"
-                    style={{
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      color: plan.completed ? 'var(--text-muted)' : '#ffffff',
-                      textDecoration: plan.completed ? 'line-through' : 'none',
-                    }}
-                  >
-                    {plan.title}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span
+                      className="highlight-title"
+                      style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        color: plan.completed ? 'var(--text-muted)' : '#ffffff',
+                        textDecoration: plan.completed ? 'line-through' : 'none',
+                      }}
+                    >
+                      {plan.title}
+                    </span>
+                    {plan.time && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.7rem',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <Clock size={10} style={{ color: 'var(--text-muted)' }} />
+                        {plan.time}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -483,8 +504,8 @@ export const TodayView: React.FC = () => {
         )}
       </div>
 
-      {/* 3. PLANS FOR TOMORROW */}
-      <TomorrowPlansSection />
+      {/* 3. REMINDERS */}
+      <RemindersSection />
     </div>
   );
 };

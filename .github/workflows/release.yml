@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force release even if tag/release already exists'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release DMG
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Check version and release status
+        id: check_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_RELEASE: ${{ github.event.inputs.force_release }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+
+          # If triggered by a tag push (e.g. refs/tags/v1.0.1), use the tag name
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION="${TAG_NAME#v}"
+          else
+            VERSION="$PKG_VERSION"
+            TAG_NAME="v$VERSION"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          # Check if release already exists on GitHub
+          if gh release view "$TAG_NAME" > /dev/null 2>&1; then
+            if [ "$FORCE_RELEASE" = "true" ]; then
+              echo "Release $TAG_NAME exists, but force_release is enabled. Proceeding with build."
+              echo "should_release=true" >> $GITHUB_OUTPUT
+            else
+              echo "Release $TAG_NAME already exists on GitHub."
+              echo "Skipping release. To publish an update, bump the version in package.json (e.g. 1.0.1) and push to main."
+              echo "should_release=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Release $TAG_NAME does not exist yet. Proceeding with build and release."
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.check_release.outputs.should_release == 'true'
+        run: npm ci
+
+      - name: Build macOS DMG Installers
+        if: steps.check_release.outputs.should_release == 'true'
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          npm run build:dmg
+
+      - name: Verify build output
+        if: steps.check_release.outputs.should_release == 'true'
+        run: |
+          echo "Generated DMG files:"
+          ls -lh release/*.dmg
+
+      - name: Publish GitHub Release
+        if: steps.check_release.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_release.outputs.tag }}
+          name: MeTric ${{ steps.check_release.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/latest-mac.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
