@@ -212,8 +212,7 @@ export class ActivityTracker {
 
     // 2. Query Frontmost Window & App
     try {
-      const { stdout } = await execFileAsync('/usr/bin/osascript', ['-l', 'JavaScript', '-e', GET_FRONT_APP_JXA]);
-      const data = JSON.parse(stdout.trim());
+      const data = await this.queryFrontWindow();
       const appName = data.app?.trim() || 'Unknown';
       const bundleId = data.bundleId?.trim() || '';
       const windowTitle = data.title?.trim() || '';
@@ -267,8 +266,40 @@ export class ActivityTracker {
 
       this.isDirty = true;
     } catch (err) {
-      // Graceful ignore on osascript transient failure
+      // Graceful ignore on query failure
     }
+  }
+
+  private async queryFrontWindow(): Promise<{ app: string; bundleId: string; title: string }> {
+    if (process.platform === 'darwin') {
+      try {
+        const { stdout } = await execFileAsync('/usr/bin/osascript', ['-l', 'JavaScript', '-e', GET_FRONT_APP_JXA]);
+        return JSON.parse(stdout.trim());
+      } catch {
+        return { app: 'Unknown', bundleId: '', title: '' };
+      }
+    }
+
+    if (process.platform === 'win32') {
+      try {
+        const psCommand =
+          "$w = Add-Type -MemberDefinition '[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);' -Name 'Win32' -Namespace 'W32' -PassThru; " +
+          '$h = $w::GetForegroundWindow(); ' +
+          '$sb = New-Object System.Text.StringBuilder 256; ' +
+          '$null = $w::GetWindowText($h, $sb, 256); ' +
+          '$p = 0; ' +
+          '$null = $w::GetWindowThreadProcessId($h, [ref]$p); ' +
+          '$pr = Get-Process -Id $p -ErrorAction SilentlyContinue; ' +
+          '@{ app = ($pr.ProcessName); bundleId = ($pr.ProcessName); title = ($sb.ToString()) } | ConvertTo-Json -Compress';
+
+        const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-NonInteractive', '-Command', psCommand]);
+        return JSON.parse(stdout.trim());
+      } catch {
+        return { app: 'Unknown', bundleId: '', title: '' };
+      }
+    }
+
+    return { app: 'Unknown', bundleId: '', title: '' };
   }
 
   private categorize(appName: string, bundleId: string, title: string): ActivityCategory {

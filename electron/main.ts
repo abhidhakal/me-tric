@@ -13,6 +13,9 @@ let tray: Tray | null = null;
 
 // Explicitly set app name and storage path
 app.setName('MeTric');
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.abhinav.metric');
+}
 const userDataPath = path.join(app.getPath('appData'), 'MeTric');
 app.setPath('userData', userDataPath);
 
@@ -153,6 +156,9 @@ ipcMain.handle('notification:openSettings', async () => {
   if (process.platform === 'darwin') {
     shell.openExternal('x-apple.systempreferences:com.apple.preference.notifications');
     return true;
+  } else if (process.platform === 'win32') {
+    shell.openExternal('ms-settings:notifications');
+    return true;
   }
   return false;
 });
@@ -172,6 +178,9 @@ ipcMain.handle('activity:getStatus', async () => {
 
 function createWindow() {
   const iconPngPath = path.join(__dirname, '../build/icon.png');
+  const iconIcoPath = path.join(__dirname, '../build/icon.ico');
+  const winIcon = process.platform === 'win32' && fs.existsSync(iconIcoPath) ? iconIcoPath : iconPngPath;
+
   if (app.dock && fs.existsSync(iconPngPath)) {
     try {
       app.dock.setIcon(iconPngPath);
@@ -186,9 +195,14 @@ function createWindow() {
     minWidth: 840,
     minHeight: 620,
     title: 'MeTric',
-    icon: fs.existsSync(iconPngPath) ? iconPngPath : undefined,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 14, y: 13 },
+    icon: fs.existsSync(winIcon) ? winIcon : undefined,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    titleBarOverlay: process.platform === 'win32' ? {
+      color: '#09090c',
+      symbolColor: '#ffffff',
+      height: 36,
+    } : undefined,
+    trafficLightPosition: process.platform === 'darwin' ? { x: 14, y: 13 } : undefined,
     backgroundColor: '#000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

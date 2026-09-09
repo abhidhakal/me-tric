@@ -6,10 +6,22 @@
 </p>
 
 <p align="left">
-  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Web-black?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-black?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Architecture-Local--First-black?style=flat-square" alt="Local First">
   <img src="https://img.shields.io/badge/Stack-Electron%20%C2%B7%20React%20%C2%B7%20TypeScript-black?style=flat-square" alt="Stack">
   <img src="https://img.shields.io/badge/License-MIT-black?style=flat-square" alt="License">
+</p>
+
+### 📥 Download MeTric
+
+<p align="left">
+  <a href="https://github.com/abhidhakal/me-tric/releases/latest">
+    <img src="https://img.shields.io/badge/Download-macOS%20(.dmg)-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/abhidhakal/me-tric/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Windows%20(.exe)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" />
+  </a>
 </p>
 
 ---
