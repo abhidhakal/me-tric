@@ -77,6 +77,7 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: |
+          npm run generate:icons
           npm run build:dmg
 
       - name: Verify build output

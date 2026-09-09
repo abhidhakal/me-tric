@@ -10,7 +10,6 @@ dist-ssr/
 dist-electron/
 release/
 out/
-build/
 *.dmg
 *.pkg
 *.zip

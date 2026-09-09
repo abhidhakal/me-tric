@@ -1,0 +1,76 @@
+<svg width="540" height="380" viewBox="0 0 540 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141419" />
+      <stop offset="50%" stop-color="#0f0f13" />
+      <stop offset="100%" stop-color="#09090c" />
+    </linearGradient>
+
+    <!-- Ambient Top Glow -->
+    <radialGradient id="topGlow" cx="50%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.08)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+
+    <!-- Arrow Gradient -->
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.15)" />
+      <stop offset="50%" stop-color="rgba(255, 255, 255, 0.7)" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+
+    <!-- Arrowhead Marker -->
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <polygon points="0 0, 8 4, 0 8" fill="#ffffff" />
+    </marker>
+
+    <!-- Drop Shadow for Pedestals -->
+    <filter id="pedestalGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Rect -->
+  <rect width="540" height="380" fill="url(#bgGrad)" />
+  <rect width="540" height="380" fill="url(#topGlow)" />
+
+  <!-- Subtle Ambient Border -->
+  <rect x="1" y="1" width="538" height="378" rx="10" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+
+  <!-- Top Branding -->
+  <g text-anchor="middle">
+    <text x="270" y="62" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="20" font-weight="700" fill="#ffffff" letter-spacing="-0.02em">MeTric</text>
+    <text x="270" y="82" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11" font-weight="500" fill="rgba(255, 255, 255, 0.45)" letter-spacing="0.01em">Personal Life &amp; Metric Tracker</text>
+  </g>
+
+  <!-- App Pedestal (Left: x=140, y=190) -->
+  <g transform="translate(140, 190)">
+    <ellipse cx="0" cy="48" rx="46" ry="14" fill="rgba(0, 0, 0, 0.45)" filter="url(#pedestalGlow)" />
+    <rect x="-42" y="-42" width="84" height="84" rx="18" fill="rgba(255, 255, 255, 0.025)" stroke="rgba(255, 255, 255, 0.08)" stroke-dasharray="4 4" stroke-width="1" />
+  </g>
+
+  <!-- Applications Pedestal (Right: x=400, y=190) -->
+  <g transform="translate(400, 190)">
+    <ellipse cx="0" cy="48" rx="46" ry="14" fill="rgba(0, 0, 0, 0.45)" filter="url(#pedestalGlow)" />
+    <rect x="-42" y="-42" width="84" height="84" rx="18" fill="rgba(255, 255, 255, 0.025)" stroke="rgba(255, 255, 255, 0.08)" stroke-dasharray="4 4" stroke-width="1" />
+  </g>
+
+  <!-- Arrow & Label (Center: between x=205 and x=335) -->
+  <g transform="translate(0, 0)">
+    <!-- Label above arrow -->
+    <text x="270" y="176" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="10" font-weight="600" fill="rgba(255, 255, 255, 0.6)" letter-spacing="0.08em" text-transform="uppercase">
+      DRAG TO INSTALL
+    </text>
+
+    <!-- Sleek Arrow Line with Head -->
+    <line x1="212" y1="190" x2="318" y2="190" stroke="url(#arrowGrad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4" />
+    <polygon points="318 185, 328 190, 318 195" fill="#ffffff" />
+  </g>
+
+  <!-- Bottom Tip -->
+  <text x="270" y="330" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="10.5" font-weight="400" fill="rgba(255, 255, 255, 0.35)">
+    Drag the MeTric icon into your Applications folder to get started
+  </text>
+</svg>
