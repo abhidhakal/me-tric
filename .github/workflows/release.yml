@@ -98,11 +98,12 @@ jobs:
 
             | Operating System | Download Link | Compatibility |
             | :--- | :--- | :--- |
-            | 🍏 **macOS** | **`MeTric-${{ steps.check_release.outputs.version }}.dmg`** | Universal (Apple Silicon M1/M2/M3/M4 & Intel) |
+            | 🍏 **macOS (Apple Silicon)** | **`MeTric-${{ steps.check_release.outputs.version }}-arm64.dmg`** | Apple Silicon M1/M2/M3/M4 |
+            | 🍏 **macOS (Intel)** | **`MeTric-${{ steps.check_release.outputs.version }}-x64.dmg`** | Intel 64-bit |
             | 🪟 **Windows** | **`MeTric-${{ steps.check_release.outputs.version }}-Windows-Setup.exe`** | Windows 10 & Windows 11 (64-bit) |
 
             ---
-            * **macOS**: Download the `.dmg`, open it, and drag **MeTric** into your **Applications** folder.
+            * **macOS**: Download the `.dmg` matching your Mac (Apple Silicon or Intel), open it, and drag **MeTric** into your **Applications** folder.
             * **Windows**: Download the `.exe` and run the setup wizard to install.
           generate_release_notes: true
           files: |

@@ -86,10 +86,20 @@ export class AppUpdateManager {
     let targetAsset: any = null;
     if (Array.isArray(data.assets)) {
       if (isMac) {
-        // Look for universal dmg or arm64/x64 dmg
+        const arch = process.arch; // 'arm64' or 'x64'
+        // 1. Prefer architecture-matched DMG (e.g. MeTric-1.0.8-arm64.dmg or -x64.dmg)
         targetAsset = data.assets.find(
-          (a: any) => a.name.endsWith('.dmg') && !a.name.endsWith('.blockmap')
+          (a: any) =>
+            a.name.endsWith('.dmg') &&
+            !a.name.endsWith('.blockmap') &&
+            a.name.toLowerCase().includes(arch)
         );
+        // 2. Fallback to universal or any valid DMG
+        if (!targetAsset) {
+          targetAsset = data.assets.find(
+            (a: any) => a.name.endsWith('.dmg') && !a.name.endsWith('.blockmap')
+          );
+        }
       } else if (isWin) {
         // Look for Windows-Setup.exe or .exe
         targetAsset = data.assets.find(
