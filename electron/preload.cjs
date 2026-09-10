@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getActivityStatus: () => ipcRenderer.invoke('activity:getStatus'),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: (url) => ipcRenderer.invoke('updater:download', url),
+  cancelDownload: () => ipcRenderer.invoke('updater:cancel'),
   installUpdate: (customPath) => ipcRenderer.invoke('updater:install', customPath),
   onUpdateProgress: (callback) => {
     ipcRenderer.on('updater:progress', (_, p) => callback(p));

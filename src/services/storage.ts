@@ -17,6 +17,7 @@ declare global {
       openNotificationSettings?: () => Promise<boolean>;
       openMainWindow?: () => Promise<boolean>;
       hideTrayPopover?: () => Promise<boolean>;
+      cancelDownload?: () => Promise<boolean>;
       isElectron: boolean;
     };
   }

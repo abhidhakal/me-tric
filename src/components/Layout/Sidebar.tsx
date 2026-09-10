@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   Clock,
@@ -6,16 +6,11 @@ import {
   Sliders,
   Target,
   BookOpen,
-  Download,
-  Upload,
-  RotateCcw,
-  Sparkles,
-  FolderOpen,
-  HardDrive,
-  ArrowUpCircle,
+  Settings,
 } from 'lucide-react';
 import { useTracker, ActiveTab } from '../../context/TrackerContext';
 import { UpdateModal } from '../Common/UpdateModal';
+import { SettingsModal } from '../Settings/SettingsModal';
 import { UpdateInfo } from '../../types';
 
 export const Sidebar: React.FC = () => {
@@ -24,17 +19,10 @@ export const Sidebar: React.FC = () => {
     setActiveTab,
     profile,
     openOnboarding,
-    exportJson,
-    importJson,
-    resetToSample,
-    resetToBlank,
-    openDataFolder,
-    storageLocation,
-    showToast
   } = useTracker();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [availableUpdate, setAvailableUpdate] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
@@ -60,36 +48,6 @@ export const Sidebar: React.FC = () => {
     { id: 'goals', label: 'Goals', icon: <Target size={18} />, shortcut: '⌘5' },
     { id: 'reviews', label: 'Reviews', icon: <BookOpen size={18} />, shortcut: '⌘6' },
   ];
-
-  const handleExport = async () => {
-    try {
-      const json = await exportJson();
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `metric-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Database exported as JSON');
-    } catch {
-      showToast('Failed to export data', 'error');
-    }
-  };
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        await importJson(content);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
 
   return (
     <aside className="sidebar">
@@ -140,118 +98,42 @@ export const Sidebar: React.FC = () => {
           ))}
         </nav>
 
-        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <div style={{ display: 'flex', gap: 4, width: '100%' }}>
-            <button
-              className="nav-item"
-              style={{ flex: 1, padding: '6px 8px', fontSize: '0.76rem', justifyContent: 'center' }}
-              onClick={() => openDataFolder()}
-              title="Open storage folder in macOS Finder"
-            >
-              <FolderOpen size={13} style={{ marginRight: 4 }} />
-              <span>Finder</span>
-            </button>
-
-            <button
-              className="nav-item"
-              style={{ flex: 1, padding: '6px 8px', fontSize: '0.76rem', justifyContent: 'center' }}
-              onClick={handleExport}
-              title="Export JSON backup"
-            >
-              <Download size={13} style={{ marginRight: 4 }} />
-              <span>Backup</span>
-            </button>
-
-            <button
-              className="nav-item"
-              style={{ flex: 1, padding: '6px 8px', fontSize: '0.76rem', justifyContent: 'center' }}
-              onClick={() => fileInputRef.current?.click()}
-              title="Restore from JSON backup"
-            >
-              <Upload size={13} style={{ marginRight: 4 }} />
-              <span>Restore</span>
-            </button>
-          </div>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            accept=".json"
-            onChange={handleImportFile}
-          />
-
+        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>
           <button
             className="nav-item"
-            style={{ padding: '4px 8px', fontSize: '0.72rem', color: 'var(--text-muted)', justifyContent: 'center', marginTop: 4 }}
-            onClick={() => {
-              if (window.confirm('Reset all entries to start with clean slate?')) {
-                resetToBlank();
-              }
-            }}
-            title="Reset database to clean state"
+            onClick={() => setIsSettingsOpen(true)}
+            style={{ width: '100%' }}
+            title="Application settings, backups & updates"
           >
-            <RotateCcw size={12} style={{ marginRight: 4 }} />
-            <span>Reset to Clean Slate</span>
+            <div className="nav-item-left">
+              <Settings size={18} />
+              <span>Settings</span>
+            </div>
+            {availableUpdate && (
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#22c55e',
+                  boxShadow: '0 0 8px rgba(34, 197, 94, 0.7)',
+                }}
+                title={`Update v${availableUpdate.latestVersion} available!`}
+              />
+            )}
           </button>
-
-          {/* Software Version & Update Button */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 8px 2px',
-              marginTop: 4,
-              borderTop: '1px solid rgba(255, 255, 255, 0.04)',
-            }}
-          >
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              v{availableUpdate?.currentVersion || '1.0.4'}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setIsUpdateModalOpen(true)}
-              style={{
-                background: availableUpdate ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-                border: availableUpdate ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid transparent',
-                borderRadius: '4px',
-                padding: '2px 6px',
-                fontSize: '0.7rem',
-                fontWeight: availableUpdate ? 700 : 500,
-                color: availableUpdate ? '#22c55e' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                transition: 'all 0.12s ease',
-              }}
-              title={availableUpdate ? `Update v${availableUpdate.latestVersion} available!` : 'Check for software updates'}
-            >
-              {availableUpdate ? (
-                <>
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: '#22c55e',
-                      boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)',
-                    }}
-                  />
-                  <span>Update v{availableUpdate.latestVersion}</span>
-                </>
-              ) : (
-                <>
-                  <ArrowUpCircle size={11} />
-                  <span>Check updates</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </div>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        availableUpdate={availableUpdate}
+        onCheckUpdates={() => {
+          setIsSettingsOpen(false);
+          setIsUpdateModalOpen(true);
+        }}
+      />
 
       <UpdateModal
         isOpen={isUpdateModalOpen}

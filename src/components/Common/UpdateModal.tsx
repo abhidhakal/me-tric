@@ -128,10 +128,21 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     }
   };
 
+  const handleClose = async () => {
+    if (status === 'downloading') {
+      try {
+        await (window as any).electronAPI?.cancelDownload?.();
+      } catch (err) {
+        console.error('Failed to cancel download on close:', err);
+      }
+    }
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div
         className="modal-card"
         style={{ maxWidth: 520, width: '92%' }}
@@ -158,12 +169,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             <div>
               <h3 className="modal-title">Software Update</h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Current Version: v{updateInfo?.currentVersion || '1.0.3'}
+                Current Version: v{updateInfo?.currentVersion || '1.0.6'}
               </span>
             </div>
           </div>
 
-          <button className="icon-btn" onClick={onClose} title="Close">
+          <button className="icon-btn" onClick={handleClose} title="Close">
             <X size={18} />
           </button>
         </div>
@@ -430,31 +441,71 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           {status !== 'downloading' ? (
             <button
               type="button"
-              className="chip-btn"
+              className="btn-secondary"
               onClick={checkForUpdates}
               disabled={status === 'checking'}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem' }}
+              style={{
+                height: 34,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: '0.82rem',
+                padding: '0 12px',
+                borderRadius: '8px',
+              }}
             >
-              <RotateCw size={12} className={status === 'checking' ? 'spin-animation' : ''} />
+              <RotateCw size={13} className={status === 'checking' ? 'spin-animation' : ''} />
               <span>Check Again</span>
             </button>
           ) : (
-            <div />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                try {
+                  await (window as any).electronAPI?.cancelDownload?.();
+                } catch {}
+                setStatus('available');
+              }}
+              style={{
+                height: 34,
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontSize: '0.82rem',
+                padding: '0 12px',
+                borderRadius: '8px',
+              }}
+            >
+              Cancel Download
+            </button>
           )}
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {status === 'available' && (
               <>
-                <button type="button" className="btn-secondary" onClick={onClose}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleClose}
+                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+                >
                   Later
                 </button>
                 <button
                   type="button"
                   className="btn-primary"
                   onClick={handleStartDownload}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  style={{
+                    height: 34,
+                    padding: '0 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
                 >
-                  <Download size={15} />
+                  <Download size={14} />
                   <span>Download & Install</span>
                 </button>
               </>
@@ -462,25 +513,69 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
             {status === 'ready' && (
               <>
-                <button type="button" className="btn-secondary" onClick={onClose}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleClose}
+                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+                >
                   Install on Next Launch
                 </button>
                 <button
                   type="button"
                   className="btn-primary"
                   onClick={handleInstallAndRestart}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  style={{
+                    height: 34,
+                    padding: '0 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
                 >
-                  <RotateCw size={15} />
+                  <RotateCw size={14} />
                   <span>Restart & Install Now</span>
                 </button>
               </>
             )}
 
-            {(status === 'up-to-date' || status === 'error') && (
-              <button type="button" className="btn-secondary" onClick={onClose}>
+            {status === 'up-to-date' && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleClose}
+                style={{ height: 34, padding: '0 16px', borderRadius: '8px', fontSize: '0.82rem' }}
+              >
                 Close
               </button>
+            )}
+
+            {status === 'error' && (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={async () => {
+                    try {
+                      await (window as any).electronAPI?.cancelDownload?.();
+                    } catch {}
+                    checkForUpdates();
+                  }}
+                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleClose}
+                  style={{ height: 34, padding: '0 16px', borderRadius: '8px', fontSize: '0.82rem' }}
+                >
+                  Close
+                </button>
+              </>
             )}
           </div>
         </div>

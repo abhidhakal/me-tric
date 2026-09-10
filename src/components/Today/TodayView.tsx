@@ -4,6 +4,7 @@ import { useTracker } from '../../context/TrackerContext';
 import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
 import { formatMetricValue } from '../../utils/formatters';
 import { RemindersSection } from './RemindersSection';
+import { DateNavigator } from '../Common/DateNavigator';
 
 function getDynamicGreeting(
   name: string | undefined,
@@ -165,37 +166,41 @@ export const TodayView: React.FC = () => {
             <p className="view-subtitle">{dynamicSubtitle}</p>
           </div>
 
-          {activitySummary && activitySummary.totalActiveSeconds > 0 && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('activity')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                textAlign: 'right',
-                transition: 'all 0.15s ease',
-              }}
-              title="View detailed Screen Time & Activity Breakdown"
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
-                  <Clock size={12} style={{ color: '#ffffff' }} />
-                  <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-                    {formatHoursMinutes(activitySummary.totalActiveSeconds)}
-                  </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <DateNavigator />
+
+            {activitySummary && activitySummary.totalActiveSeconds > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('activity')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '5px 12px',
+                  cursor: 'pointer',
+                  textAlign: 'right',
+                  transition: 'all 0.15s ease',
+                }}
+                title="View detailed Screen Time & Activity Breakdown"
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                    <Clock size={12} style={{ color: '#ffffff' }} />
+                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                      {formatHoursMinutes(activitySummary.totalActiveSeconds)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {formatHoursMinutes(activitySummary.deepWorkSeconds)} Deep Work
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {formatHoursMinutes(activitySummary.deepWorkSeconds)} Deep Work
-                </div>
-              </div>
-            </button>
-          )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

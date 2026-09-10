@@ -44,6 +44,32 @@ export class AppUpdateManager {
   private repo = 'abhidhakal/me-tric';
   private currentDownloadedPath: string | null = null;
   private isDownloading = false;
+  private activeRequest: http.ClientRequest | null = null;
+  private activeFileStream: fs.WriteStream | null = null;
+  private activeDestPath: string | null = null;
+
+  public cancelDownload(): boolean {
+    if (this.activeRequest) {
+      try {
+        this.activeRequest.destroy();
+      } catch {}
+      this.activeRequest = null;
+    }
+    if (this.activeFileStream) {
+      try {
+        this.activeFileStream.close();
+      } catch {}
+      this.activeFileStream = null;
+    }
+    if (this.activeDestPath && fs.existsSync(this.activeDestPath)) {
+      try {
+        fs.unlinkSync(this.activeDestPath);
+      } catch {}
+      this.activeDestPath = null;
+    }
+    this.isDownloading = false;
+    return true;
+  }
 
   public async checkForUpdates(): Promise<UpdateInfo> {
     const currentVersion = app.getVersion();
@@ -106,16 +132,17 @@ export class AppUpdateManager {
       const tempDir = app.getPath('temp');
       const targetFilePath = path.join(tempDir, filename);
 
-      // If already downloaded and complete
       this.currentDownloadedPath = targetFilePath;
+      this.activeDestPath = targetFilePath;
 
       await this.downloadFileWithRedirects(downloadUrl, targetFilePath, onProgress);
 
-      this.isDownloading = false;
       return { success: true, filePath: targetFilePath };
-    } catch (err) {
+    } finally {
       this.isDownloading = false;
-      throw err;
+      this.activeRequest = null;
+      this.activeFileStream = null;
+      this.activeDestPath = null;
     }
   }
 
@@ -280,7 +307,7 @@ fi
         },
       };
 
-      client
+      const req = client
         .get(options, (res) => {
           // Follow HTTP redirects (GitHub releases redirect to AWS S3/CDN)
           if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -297,6 +324,7 @@ fi
           let transferredBytes = 0;
 
           const fileStream = fs.createWriteStream(destPath);
+          this.activeFileStream = fileStream;
 
           res.on('data', (chunk) => {
             transferredBytes += chunk.length;
@@ -310,11 +338,13 @@ fi
 
           fileStream.on('finish', () => {
             fileStream.close();
+            this.activeFileStream = null;
             resolve();
           });
 
           fileStream.on('error', (err) => {
             fs.unlink(destPath, () => {});
+            this.activeFileStream = null;
             reject(err);
           });
         })
@@ -322,6 +352,8 @@ fi
           fs.unlink(destPath, () => {});
           reject(err);
         });
+
+      this.activeRequest = req;
     });
   }
 }

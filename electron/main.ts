@@ -191,6 +191,10 @@ ipcMain.handle('updater:download', async (_, downloadUrl: string) => {
   });
 });
 
+ipcMain.handle('updater:cancel', async () => {
+  return appUpdater.cancelDownload();
+});
+
 ipcMain.handle('updater:install', async (_, customPath?: string) => {
   return appUpdater.installAndRestart(customPath);
 });
@@ -471,8 +475,14 @@ app.whenReady().then(() => {
   }, 5000);
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
       createWindow();
+    } else {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
 });

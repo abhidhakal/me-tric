@@ -20,6 +20,7 @@ import {
 import { useTracker } from '../../context/TrackerContext';
 import { ActivityCategory } from '../../types';
 import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
+import { DateNavigator } from '../Common/DateNavigator';
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return '0m';
@@ -132,8 +133,10 @@ export const ActivityView: React.FC = () => {
             </p>
           </div>
 
-          {/* Live Status Pill & Tracking Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Live Status Pill & Tracking Toggle & Date Navigator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <DateNavigator />
+
             {isViewingToday && (
               <div
                 style={{
