@@ -133,7 +133,7 @@ export const RemindersSection: React.FC = () => {
             style={{
               width: '100%',
               padding: '10px 14px',
-              paddingRight: isCustomSchedule ? '170px' : '116px',
+              paddingRight: isCustomSchedule ? '200px' : '120px',
               fontSize: '0.9rem',
             }}
             placeholder="Add a reminder or plan... (Press Enter)"
@@ -161,7 +161,7 @@ export const RemindersSection: React.FC = () => {
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              maxWidth: 155,
+              maxWidth: 185,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
