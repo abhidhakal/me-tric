@@ -347,23 +347,38 @@ function toggleTrayWindow() {
   }
 }
 
+const TRAY_ICON_1X_B64 = 'iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAEqADAAQAAAABAAAAEgAAAAC5YZBvAAAB+ElEQVQ4EXXTXWiPURwH8LELF5SUvDdvxSWSEsO8TElCecu4kOKGIsWFlESK2IVCcbGSiOQ9koi834wki2JCeV9MIyk+37X91/bffvX5n/Oc53nOc87v/P4lJW0xuK1b1OtlpGfRaIeB7i3X+7XDO9wb6Ho8p3jHOebSaeThTNJENaUs4TZf+cwuFlFDI2fpR1FkcBPP2cgLDlDBOA5zgaUt14+0j+lLp3Hf6BdmsJB7fOAQe8kKL1JGLWfoRklrftLfTRK+hqymkmtU8Yl6yskzB1nFPCooxFC9JnIjX37JUWZxgyu85zyj+UmezSGcoBAb9OoYy28mc5xMuI5RDKCBlWSrp1nBawpbS06uM5MnZN/zyQdSEvvIZGmX84Cs7DuJKa05So305h/Z4hCS5JxOJprGME4ylWf0IaVSzwKaY4zfH2RrObXpPGQ7/algEDe5ykQayXtvSY01R+rhG7NJcqtZzC+WkQNo4C4juEVyOIcsIEVdiEt6x6jkD+WsJys8QvKXFV/mFcNIPpP4dpEX/5J87CBfWkte3skdktxMNJIa3pB/RVHsMZItTmA19Xwk9bKZfGQSydVbkqNOo9ToQVJwW8lqstUtpNpz7LmXGiqjEN0KvfadKpfbyLLryJaS+FqSy7TtoquJ8lAPcsw5yaekhrqM/zETenW1+ddWAAAAAElFTkSuQmCC';
+const TRAY_ICON_2X_B64 = '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';
+
 function createTray() {
   try {
     const possiblePaths = [
       path.join(__dirname, '../assets/trayTemplate.png'),
+      path.join(__dirname, '../public/trayTemplate.png'),
+      path.join(__dirname, '../dist/trayTemplate.png'),
       path.join(__dirname, '../build/trayTemplate.png'),
-      path.join(__dirname, '../src/assets/logo-variants/trayTemplate.png'),
+      path.join(app.getAppPath(), 'assets/trayTemplate.png'),
+      path.join(app.getAppPath(), 'public/trayTemplate.png'),
     ];
     const foundPath = possiblePaths.find((p) => fs.existsSync(p));
 
     let icon: Electron.NativeImage;
     if (foundPath) {
       icon = nativeImage.createFromPath(foundPath);
-      if (process.platform === 'darwin') {
-        icon.setTemplateImage(true);
-      }
     } else {
       icon = nativeImage.createEmpty();
+      icon.addRepresentation({
+        scaleFactor: 1.0,
+        buffer: Buffer.from(TRAY_ICON_1X_B64, 'base64'),
+      });
+      icon.addRepresentation({
+        scaleFactor: 2.0,
+        buffer: Buffer.from(TRAY_ICON_2X_B64, 'base64'),
+      });
+    }
+
+    if (process.platform === 'darwin') {
+      icon.setTemplateImage(true);
     }
 
     tray = new Tray(icon);

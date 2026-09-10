@@ -4,7 +4,7 @@
   "description": "Personal productivity and metric tracking desktop application",
   "author": "Abhinav Dhakal",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "MIT",
   "main": "dist-electron/main.js",
   "type": "module",
@@ -30,7 +30,9 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "assets/**/*",
+      "public/**/*"
     ],
     "mac": {
       "category": "public.app-category.productivity",
