@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, shell, Notification } from 'electron';
+import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, shell, Notification, screen } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let trayWindow: BrowserWindow | null = null;
 
 // Explicitly set app name and storage path
 app.setName('MeTric');
@@ -194,6 +195,27 @@ ipcMain.handle('updater:install', async (_, customPath?: string) => {
   return appUpdater.installAndRestart(customPath);
 });
 
+ipcMain.handle('app:openMainWindow', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+  } else {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+  if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
+    trayWindow.hide();
+  }
+  return true;
+});
+
+ipcMain.handle('tray:hide', () => {
+  if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
+    trayWindow.hide();
+  }
+  return true;
+});
+
 function createWindow() {
   const iconPngPath = path.join(__dirname, '../build/icon.png');
   const iconIcoPath = path.join(__dirname, '../build/icon.ico');
@@ -244,9 +266,106 @@ function createWindow() {
   });
 }
 
+function createTrayWindow() {
+  if (trayWindow && !trayWindow.isDestroyed()) {
+    return trayWindow;
+  }
+
+  trayWindow = new BrowserWindow({
+    width: 360,
+    height: 480,
+    show: false,
+    frame: false,
+    resizable: false,
+    movable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  const distHtmlPath = path.join(__dirname, '../dist/index.html');
+  if (process.env.VITE_DEV_SERVER_URL) {
+    trayWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}#tray`);
+  } else if (fs.existsSync(distHtmlPath)) {
+    trayWindow.loadFile(distHtmlPath, { hash: 'tray' });
+  } else {
+    trayWindow.loadURL('http://localhost:5173#tray');
+  }
+
+  trayWindow.on('blur', () => {
+    if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
+      trayWindow.hide();
+    }
+  });
+
+  trayWindow.on('closed', () => {
+    trayWindow = null;
+  });
+
+  return trayWindow;
+}
+
+function positionTrayWindow() {
+  if (!tray || !trayWindow || trayWindow.isDestroyed()) return;
+  const trayBounds = tray.getBounds();
+  const windowBounds = trayWindow.getBounds();
+  const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
+  const workArea = display.workArea;
+
+  // Center popover horizontally under the tray icon
+  let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
+  let y = Math.round(trayBounds.y + trayBounds.height + 4);
+
+  // Prevent overflowing off display bounds
+  if (x + windowBounds.width > workArea.x + workArea.width) {
+    x = workArea.x + workArea.width - windowBounds.width - 12;
+  }
+  if (x < workArea.x) {
+    x = workArea.x + 12;
+  }
+
+  trayWindow.setPosition(x, y, false);
+}
+
+function toggleTrayWindow() {
+  if (!trayWindow || trayWindow.isDestroyed()) {
+    createTrayWindow();
+  }
+  if (trayWindow?.isVisible()) {
+    trayWindow.hide();
+  } else {
+    positionTrayWindow();
+    trayWindow?.show();
+    trayWindow?.focus();
+  }
+}
+
 function createTray() {
   try {
-    const icon = nativeImage.createEmpty();
+    const possiblePaths = [
+      path.join(__dirname, '../assets/trayTemplate.png'),
+      path.join(__dirname, '../build/trayTemplate.png'),
+      path.join(__dirname, '../src/assets/logo-variants/trayTemplate.png'),
+    ];
+    const foundPath = possiblePaths.find((p) => fs.existsSync(p));
+
+    let icon: Electron.NativeImage;
+    if (foundPath) {
+      icon = nativeImage.createFromPath(foundPath);
+      if (process.platform === 'darwin') {
+        icon.setTemplateImage(true);
+      }
+    } else {
+      icon = nativeImage.createEmpty();
+    }
+
     tray = new Tray(icon);
     tray.setToolTip('MeTric — Track your life');
 
@@ -265,7 +384,7 @@ function createTray() {
       },
       { type: 'separator' },
       {
-        label: 'Open App Window',
+        label: 'Open Full MeTric',
         click: () => {
           if (!mainWindow) {
             createWindow();
@@ -297,22 +416,21 @@ function createTray() {
       },
       { type: 'separator' },
       {
-        label: 'Quit',
+        label: 'Quit MeTric',
         click: () => {
           app.quit();
         },
       },
     ]);
 
-    tray.setContextMenu(contextMenu);
+    // Left click toggles the compact Raycast/Things style popover
     tray.on('click', () => {
-      if (mainWindow?.isVisible()) {
-        mainWindow.hide();
-      } else {
-        if (!mainWindow) createWindow();
-        mainWindow?.show();
-        mainWindow?.focus();
-      }
+      toggleTrayWindow();
+    });
+
+    // Right click displays native context menu
+    tray.on('right-click', () => {
+      tray?.popUpContextMenu(contextMenu);
     });
   } catch (e) {
     console.log('Tray creation note:', e);
@@ -322,6 +440,7 @@ function createTray() {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  createTrayWindow();
   activityTracker.init();
 
   // Background update check after app startup

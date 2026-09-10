@@ -15,6 +15,8 @@ declare global {
       openDataFolder: () => Promise<boolean>;
       showNotification?: (title: string, body: string) => Promise<boolean>;
       openNotificationSettings?: () => Promise<boolean>;
+      openMainWindow?: () => Promise<boolean>;
+      hideTrayPopover?: () => Promise<boolean>;
       isElectron: boolean;
     };
   }

@@ -25,5 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onOpenUpdateModal: (callback) => {
     ipcRenderer.on('updater:open-modal', () => callback());
   },
+  openMainWindow: () => ipcRenderer.invoke('app:openMainWindow'),
+  hideTrayPopover: () => ipcRenderer.invoke('tray:hide'),
   isElectron: true,
 });
