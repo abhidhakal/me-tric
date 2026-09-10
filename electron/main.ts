@@ -287,12 +287,18 @@ function createTrayWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     hasShadow: true,
+    type: process.platform === 'darwin' ? 'panel' : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
   });
+
+  if (process.platform === 'darwin') {
+    trayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    trayWindow.setAlwaysOnTop(true, 'status');
+  }
 
   const distHtmlPath = path.join(__dirname, '../dist/index.html');
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -321,18 +327,18 @@ function positionTrayWindow() {
   const trayBounds = tray.getBounds();
   const windowBounds = trayWindow.getBounds();
   const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
-  const workArea = display.workArea;
+  const bounds = display.bounds;
 
   // Center popover horizontally under the tray icon
   let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
   let y = Math.round(trayBounds.y + trayBounds.height + 4);
 
   // Prevent overflowing off display bounds
-  if (x + windowBounds.width > workArea.x + workArea.width) {
-    x = workArea.x + workArea.width - windowBounds.width - 12;
+  if (x + windowBounds.width > bounds.x + bounds.width) {
+    x = bounds.x + bounds.width - windowBounds.width - 12;
   }
-  if (x < workArea.x) {
-    x = workArea.x + 12;
+  if (x < bounds.x) {
+    x = bounds.x + 12;
   }
 
   trayWindow.setPosition(x, y, false);
@@ -345,6 +351,10 @@ function toggleTrayWindow() {
   if (trayWindow?.isVisible()) {
     trayWindow.hide();
   } else {
+    if (process.platform === 'darwin') {
+      trayWindow?.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      trayWindow?.setAlwaysOnTop(true, 'status');
+    }
     positionTrayWindow();
     trayWindow?.show();
     trayWindow?.focus();
