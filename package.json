@@ -4,7 +4,7 @@
   "description": "Personal productivity and metric tracking desktop application",
   "author": "Abhinav Dhakal",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "license": "MIT",
   "main": "dist-electron/main.js",
   "type": "module",
@@ -39,7 +39,9 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         }
       ]
     },
@@ -72,7 +74,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
