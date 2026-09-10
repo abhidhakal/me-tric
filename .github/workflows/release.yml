@@ -104,6 +104,7 @@ jobs:
 
             ---
             * **macOS**: Download the `.dmg` matching your Mac (Apple Silicon or Intel), open it, and drag **MeTric** into your **Applications** folder.
+            * **macOS Gatekeeper Note**: If macOS shows *"MeTric is damaged and can't be opened"*, open Terminal and run `xattr -cr /Applications/MeTric.app` (or click *"Open Anyway"* in **System Settings > Privacy & Security**).
             * **Windows**: Download the `.exe` and run the setup wizard to install.
           generate_release_notes: true
           files: |
