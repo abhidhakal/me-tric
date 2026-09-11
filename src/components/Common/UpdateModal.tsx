@@ -145,7 +145,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     <div className="modal-overlay" onClick={handleClose}>
       <div
         className="modal-card"
-        style={{ maxWidth: 520, width: '92%' }}
+        style={{ maxWidth: 540, width: '92%' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -180,7 +180,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         </div>
 
         {/* Body Content based on Status */}
-        <div style={{ margin: '20px 0 24px' }}>
+        <div style={{ margin: '16px 0 20px' }}>
           {status === 'checking' && (
             <div style={{ textAlign: 'center', padding: '30px 10px' }}>
               <Loader2
@@ -223,7 +223,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 MeTric is Up to Date
               </h4>
               <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: 360, margin: '0 auto' }}>
-                You are running the latest version <strong style={{ color: '#ffffff' }}>v{updateInfo?.currentVersion || '1.0.3'}</strong>. No updates needed.
+                You are running the latest version <strong style={{ color: '#ffffff' }}>v{updateInfo?.currentVersion || '1.0.10'}</strong>. No updates needed.
               </p>
             </div>
           )}
@@ -374,29 +374,46 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           )}
 
           {status === 'ready' && (
-            <div style={{ textAlign: 'center', padding: '24px 10px' }}>
+            <div style={{ textAlign: 'center', padding: '20px 12px 12px' }}>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   borderRadius: '50%',
                   background: 'rgba(255, 255, 255, 0.08)',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 14px',
+                  margin: '0 auto 16px',
                   color: '#ffffff',
                 }}
               >
-                <Sparkles size={22} />
+                <Sparkles size={24} />
               </div>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
-                Update Ready to Install!
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginBottom: 8, letterSpacing: '-0.01em' }}>
+                Update Ready to Install
               </h4>
-              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: 380, margin: '0 auto', lineHeight: 1.5 }}>
-                The update package has been verified and downloaded. Click below to restart MeTric and apply the update.
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 16px', lineHeight: 1.55 }}>
+                MeTric v{updateInfo?.latestVersion || ''} has been downloaded and verified. Restart now to apply the update immediately, or choose to install later.
               </p>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 14px',
+                  borderRadius: '999px',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.25)',
+                  color: '#4ade80',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                }}
+              >
+                <CheckCircle2 size={14} />
+                <span>Ready to install on restart</span>
+              </div>
             </div>
           )}
 
@@ -434,60 +451,113 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingTop: 14,
+            gap: 12,
+            paddingTop: 16,
             borderTop: '1px solid var(--border-subtle)',
+            flexWrap: 'wrap',
           }}
         >
-          {status !== 'downloading' ? (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={checkForUpdates}
-              disabled={status === 'checking'}
-              style={{
-                height: 34,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: '0.82rem',
-                padding: '0 12px',
-                borderRadius: '8px',
-              }}
-            >
-              <RotateCw size={13} className={status === 'checking' ? 'spin-animation' : ''} />
-              <span>Check Again</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={async () => {
-                try {
-                  await (window as any).electronAPI?.cancelDownload?.();
-                } catch {}
-                setStatus('available');
-              }}
-              style={{
-                height: 34,
-                display: 'inline-flex',
-                alignItems: 'center',
-                fontSize: '0.82rem',
-                padding: '0 12px',
-                borderRadius: '8px',
-              }}
-            >
-              Cancel Download
-            </button>
-          )}
+          {/* Left Context or Secondary Action */}
+          <div style={{ display: 'flex', alignItems: 'center', minHeight: 36 }}>
+            {status === 'up-to-date' && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={checkForUpdates}
+                style={{
+                  height: 36,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '0.82rem',
+                  padding: '0 14px',
+                  borderRadius: '8px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                <RotateCw size={13} />
+                <span>Check Again</span>
+              </button>
+            )}
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {status === 'ready' && (
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                v{updateInfo?.latestVersion || ''} Downloaded
+              </span>
+            )}
+
+            {status === 'error' && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleClose}
+                style={{
+                  height: 36,
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                Close
+              </button>
+            )}
+          </div>
+
+          {/* Right Actions */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginLeft: 'auto' }}>
+            {status === 'checking' && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleClose}
+                style={{
+                  height: 36,
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                Cancel
+              </button>
+            )}
+
+            {status === 'up-to-date' && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleClose}
+                style={{
+                  height: 36,
+                  padding: '0 20px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                Done
+              </button>
+            )}
+
             {status === 'available' && (
               <>
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={handleClose}
-                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+                  style={{
+                    height: 36,
+                    padding: '0 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.84rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
                 >
                   Later
                 </button>
@@ -496,19 +566,46 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   className="btn-primary"
                   onClick={handleStartDownload}
                   style={{
-                    height: 34,
-                    padding: '0 16px',
+                    height: 36,
+                    padding: '0 18px',
                     borderRadius: '8px',
-                    fontSize: '0.82rem',
+                    fontSize: '0.84rem',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   <Download size={14} />
-                  <span>Download & Install</span>
+                  <span>Download Update</span>
                 </button>
               </>
+            )}
+
+            {status === 'downloading' && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={async () => {
+                  try {
+                    await (window as any).electronAPI?.cancelDownload?.();
+                  } catch {}
+                  setStatus('available');
+                }}
+                style={{
+                  height: 36,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  fontSize: '0.84rem',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                Cancel Download
+              </button>
             )}
 
             {status === 'ready' && (
@@ -517,65 +614,62 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   type="button"
                   className="btn-secondary"
                   onClick={handleClose}
-                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+                  style={{
+                    height: 36,
+                    padding: '0 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.84rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
                 >
-                  Install on Next Launch
+                  Install Later
                 </button>
                 <button
                   type="button"
                   className="btn-primary"
                   onClick={handleInstallAndRestart}
                   style={{
-                    height: 34,
-                    padding: '0 16px',
+                    height: 36,
+                    padding: '0 18px',
                     borderRadius: '8px',
-                    fontSize: '0.82rem',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 6,
+                    gap: 7,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   <RotateCw size={14} />
-                  <span>Restart & Install Now</span>
+                  <span>Restart & Install</span>
                 </button>
               </>
-            )}
-
-            {status === 'up-to-date' && (
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={handleClose}
-                style={{ height: 34, padding: '0 16px', borderRadius: '8px', fontSize: '0.82rem' }}
-              >
-                Close
-              </button>
             )}
 
             {status === 'error' && (
-              <>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={async () => {
-                    try {
-                      await (window as any).electronAPI?.cancelDownload?.();
-                    } catch {}
-                    checkForUpdates();
-                  }}
-                  style={{ height: 34, padding: '0 14px', borderRadius: '8px', fontSize: '0.82rem' }}
-                >
-                  Try Again
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={handleClose}
-                  style={{ height: 34, padding: '0 16px', borderRadius: '8px', fontSize: '0.82rem' }}
-                >
-                  Close
-                </button>
-              </>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  checkForUpdates();
+                }}
+                style={{
+                  height: 36,
+                  padding: '0 18px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                <RotateCw size={14} />
+                <span>Try Again</span>
+              </button>
             )}
           </div>
         </div>

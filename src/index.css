@@ -576,6 +576,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   gap: 6px;
   transition: all 0.12s ease;
   box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
@@ -618,6 +619,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   justify-content: center;
   gap: 6px;
   transition: all 0.12s ease;
+  white-space: nowrap;
 }
 
 .btn-secondary:hover {
