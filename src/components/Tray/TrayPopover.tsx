@@ -23,7 +23,29 @@ export const TrayPopover: React.FC = () => {
     activityStatus,
     activitySummary,
     toggleActivityTracking,
+    refreshData,
   } = useTracker();
+
+  // Keep data completely synchronized whenever the tray popover is opened or focused
+  React.useEffect(() => {
+    refreshData();
+    const handleFocus = () => {
+      refreshData();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    let cleanup: (() => void) | undefined;
+    if (typeof window !== 'undefined' && window.electronAPI?.onTrayShown) {
+      cleanup = window.electronAPI.onTrayShown(() => {
+        refreshData();
+      });
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (cleanup) cleanup();
+    };
+  }, [refreshData]);
 
   // Active enabled metrics
   const activeMetrics = useMemo(() => {

@@ -12,6 +12,12 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayWindow: BrowserWindow | null = null;
+let isQuitting = false;
+let lastTrayBlurTime = 0;
+
+app.on('before-quit', () => {
+  isQuitting = true;
+});
 
 // Explicitly set app name and storage path
 app.setName('MeTric');
@@ -199,14 +205,23 @@ ipcMain.handle('updater:install', async (_, customPath?: string) => {
   return appUpdater.installAndRestart(customPath);
 });
 
-ipcMain.handle('app:openMainWindow', () => {
+function showMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
-  } else {
+  }
+  if (app.dock) {
+    app.dock.show();
+  }
+  if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
+    app.focus({ steal: true });
   }
+}
+
+ipcMain.handle('app:openMainWindow', () => {
+  showMainWindow();
   if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
     trayWindow.hide();
   }
@@ -265,6 +280,14 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   }
 
+  // Intercept the close event: when clicking red close button on macOS, hide instead of quit
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -310,6 +333,7 @@ function createTrayWindow() {
   }
 
   trayWindow.on('blur', () => {
+    lastTrayBlurTime = Date.now();
     if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
       trayWindow.hide();
     }
@@ -324,14 +348,25 @@ function createTrayWindow() {
 
 function positionTrayWindow() {
   if (!tray || !trayWindow || trayWindow.isDestroyed()) return;
-  const trayBounds = tray.getBounds();
+  let trayBounds = tray.getBounds();
   const windowBounds = trayWindow.getBounds();
+
+  // If tray bounds are empty or 0, fallback to current cursor screen point
+  if (!trayBounds || (trayBounds.width === 0 && trayBounds.height === 0)) {
+    const cursor = screen.getCursorScreenPoint();
+    trayBounds = { x: cursor.x - 10, y: cursor.y, width: 20, height: 22 };
+  }
+
   const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
   const bounds = display.bounds;
 
   // Center popover horizontally under the tray icon
   let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
   let y = Math.round(trayBounds.y + trayBounds.height + 4);
+
+  if (y < bounds.y) {
+    y = bounds.y + 4;
+  }
 
   // Prevent overflowing off display bounds
   if (x + windowBounds.width > bounds.x + bounds.width) {
@@ -348,6 +383,14 @@ function toggleTrayWindow() {
   if (!trayWindow || trayWindow.isDestroyed()) {
     createTrayWindow();
   }
+
+  // If it just blurred within the last 350ms, user clicked the tray icon to dismiss it.
+  // The blur handler already hid it, so do not immediately re-show.
+  const now = Date.now();
+  if (now - lastTrayBlurTime < 350) {
+    return;
+  }
+
   if (trayWindow?.isVisible()) {
     trayWindow.hide();
   } else {
@@ -358,6 +401,7 @@ function toggleTrayWindow() {
     positionTrayWindow();
     trayWindow?.show();
     trayWindow?.focus();
+    trayWindow?.webContents.send('tray:shown');
   }
 }
 
@@ -402,25 +446,15 @@ function createTray() {
       {
         label: '+ Quick Log',
         click: () => {
-          if (!mainWindow) {
-            createWindow();
-          } else {
-            mainWindow.show();
-            mainWindow.focus();
-            mainWindow.webContents.send('trigger-quick-log');
-          }
+          showMainWindow();
+          mainWindow?.webContents.send('trigger-quick-log');
         },
       },
       { type: 'separator' },
       {
         label: 'Open Full MeTric',
         click: () => {
-          if (!mainWindow) {
-            createWindow();
-          } else {
-            mainWindow.show();
-            mainWindow.focus();
-          }
+          showMainWindow();
         },
       },
       {
@@ -437,9 +471,7 @@ function createTray() {
       {
         label: 'Check for Updates...',
         click: () => {
-          if (!mainWindow) createWindow();
-          mainWindow?.show();
-          mainWindow?.focus();
+          showMainWindow();
           mainWindow?.webContents.send('updater:open-modal');
         },
       },
@@ -447,6 +479,7 @@ function createTray() {
       {
         label: 'Quit MeTric',
         click: () => {
+          isQuitting = true;
           app.quit();
         },
       },
@@ -485,15 +518,7 @@ app.whenReady().then(() => {
   }, 5000);
 
   app.on('activate', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      createWindow();
-    } else {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    showMainWindow();
   });
 });
 

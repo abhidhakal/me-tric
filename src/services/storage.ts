@@ -18,6 +18,7 @@ declare global {
       openMainWindow?: () => Promise<boolean>;
       hideTrayPopover?: () => Promise<boolean>;
       cancelDownload?: () => Promise<boolean>;
+      onTrayShown?: (callback: () => void) => () => void;
       isElectron: boolean;
     };
   }
