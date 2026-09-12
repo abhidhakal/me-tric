@@ -28,22 +28,35 @@ export const TrayPopover: React.FC = () => {
 
   // Keep data completely synchronized whenever the tray popover is opened or focused
   React.useEffect(() => {
-    refreshData();
-    const handleFocus = () => {
+    try {
       refreshData();
+    } catch {}
+
+    const handleFocus = () => {
+      try {
+        refreshData();
+      } catch {}
     };
     window.addEventListener('focus', handleFocus);
 
     let cleanup: (() => void) | undefined;
     if (typeof window !== 'undefined' && window.electronAPI?.onTrayShown) {
-      cleanup = window.electronAPI.onTrayShown(() => {
-        refreshData();
-      });
+      try {
+        cleanup = window.electronAPI.onTrayShown(() => {
+          try {
+            refreshData();
+          } catch {}
+        });
+      } catch {}
     }
 
     return () => {
       window.removeEventListener('focus', handleFocus);
-      if (cleanup) cleanup();
+      if (cleanup) {
+        try {
+          cleanup();
+        } catch {}
+      }
     };
   }, [refreshData]);
 

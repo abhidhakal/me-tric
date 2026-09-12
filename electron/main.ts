@@ -32,6 +32,27 @@ const backupsDir = path.join(userDataPath, 'backups');
 
 const legacyPath = path.join(app.getPath('appData'), 'Personal KPI');
 const legacyDbFilePath = path.join(legacyPath, 'database.json');
+const errorLogPath = path.join(userDataPath, 'error.log');
+
+export function logErrorToFile(context: string, err: any) {
+  try {
+    ensureStorageDirs();
+    const timestamp = new Date().toISOString();
+    const stack = err instanceof Error ? (err.stack || err.message) : String(err);
+    fs.appendFileSync(errorLogPath, `[${timestamp}] [${context}] ${stack}\n`, 'utf-8');
+  } catch {}
+}
+
+// Global crash prevention: Never let unhandled exceptions or rejections silently kill the app
+process.on('uncaughtException', (error) => {
+  console.error('CRITICAL: Uncaught Exception in Main Process:', error);
+  logErrorToFile('uncaughtException', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('CRITICAL: Unhandled Rejection in Main Process:', reason);
+  logErrorToFile('unhandledRejection', reason);
+});
 
 function ensureStorageDirs() {
   if (!fs.existsSync(userDataPath)) {
@@ -270,6 +291,11 @@ function createWindow() {
     },
   });
 
+  mainWindow.webContents.on('render-process-gone', (_, details) => {
+    console.error('Main window render process gone:', details.reason);
+    logErrorToFile('mainWindow:render-process-gone', details.reason);
+  });
+
   const distHtmlPath = path.join(__dirname, '../dist/index.html');
 
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -310,33 +336,56 @@ function createTrayWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     hasShadow: true,
-    type: process.platform === 'darwin' ? 'panel' : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
   });
 
   if (process.platform === 'darwin') {
-    trayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    trayWindow.setAlwaysOnTop(true, 'status');
+    try {
+      trayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      trayWindow.setAlwaysOnTop(true, 'floating');
+    } catch (e) {
+      console.warn('Could not set trayWindow visible on all workspaces:', e);
+    }
   }
 
   const distHtmlPath = path.join(__dirname, '../dist/index.html');
   if (process.env.VITE_DEV_SERVER_URL) {
-    trayWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}#tray`);
+    trayWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}#tray`).catch((e) => {
+      console.warn('Failed loading tray dev URL:', e);
+    });
   } else if (fs.existsSync(distHtmlPath)) {
-    trayWindow.loadFile(distHtmlPath, { hash: 'tray' });
+    trayWindow.loadFile(distHtmlPath, { hash: 'tray' }).catch((e) => {
+      console.warn('Failed loading tray file:', e);
+    });
   } else {
-    trayWindow.loadURL('http://localhost:5173#tray');
+    trayWindow.loadURL('http://localhost:5173#tray').catch((e) => {
+      console.warn('Failed loading tray fallback URL:', e);
+    });
   }
 
   trayWindow.on('blur', () => {
     lastTrayBlurTime = Date.now();
-    if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
-      trayWindow.hide();
-    }
+    try {
+      if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
+        trayWindow.hide();
+      }
+    } catch {}
+  });
+
+  trayWindow.webContents.on('render-process-gone', (_, details) => {
+    console.warn('Tray popover render process gone:', details.reason);
+    logErrorToFile('trayWindow:render-process-gone', details.reason);
+    try {
+      if (trayWindow && !trayWindow.isDestroyed()) {
+        trayWindow.destroy();
+      }
+    } catch {}
+    trayWindow = null;
   });
 
   trayWindow.on('closed', () => {
@@ -347,61 +396,97 @@ function createTrayWindow() {
 }
 
 function positionTrayWindow() {
-  if (!tray || !trayWindow || trayWindow.isDestroyed()) return;
-  let trayBounds = tray.getBounds();
-  const windowBounds = trayWindow.getBounds();
+  try {
+    if (!tray || !trayWindow || trayWindow.isDestroyed()) return;
 
-  // If tray bounds are empty or 0, fallback to current cursor screen point
-  if (!trayBounds || (trayBounds.width === 0 && trayBounds.height === 0)) {
+    let trayBounds: Electron.Rectangle | null = null;
+    try {
+      trayBounds = tray.getBounds();
+    } catch (e) {
+      console.warn('tray.getBounds() note:', e);
+    }
+
+    const windowBounds = trayWindow.getBounds();
     const cursor = screen.getCursorScreenPoint();
-    trayBounds = { x: cursor.x - 10, y: cursor.y, width: 20, height: 22 };
+
+    // If tray bounds are empty or 0, fallback to current cursor screen point
+    if (!trayBounds || (trayBounds.width === 0 && trayBounds.height === 0)) {
+      trayBounds = { x: cursor.x - 10, y: cursor.y, width: 20, height: 22 };
+    }
+
+    let display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
+    if (!display || !display.bounds) {
+      display = screen.getPrimaryDisplay();
+    }
+    const bounds = display.bounds;
+
+    // Center popover horizontally under the tray icon
+    let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
+    let y = Math.round(trayBounds.y + trayBounds.height + 4);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      x = bounds.x + bounds.width - windowBounds.width - 20;
+      y = bounds.y + 28;
+    }
+
+    if (y < bounds.y) {
+      y = bounds.y + 4;
+    }
+
+    // Prevent overflowing off display bounds
+    if (x + windowBounds.width > bounds.x + bounds.width) {
+      x = bounds.x + bounds.width - windowBounds.width - 12;
+    }
+    if (x < bounds.x) {
+      x = bounds.x + 12;
+    }
+
+    trayWindow.setPosition(x, y, false);
+  } catch (err) {
+    console.error('Failed to position tray window:', err);
+    logErrorToFile('positionTrayWindow', err);
   }
-
-  const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
-  const bounds = display.bounds;
-
-  // Center popover horizontally under the tray icon
-  let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
-  let y = Math.round(trayBounds.y + trayBounds.height + 4);
-
-  if (y < bounds.y) {
-    y = bounds.y + 4;
-  }
-
-  // Prevent overflowing off display bounds
-  if (x + windowBounds.width > bounds.x + bounds.width) {
-    x = bounds.x + bounds.width - windowBounds.width - 12;
-  }
-  if (x < bounds.x) {
-    x = bounds.x + 12;
-  }
-
-  trayWindow.setPosition(x, y, false);
 }
 
 function toggleTrayWindow() {
-  if (!trayWindow || trayWindow.isDestroyed()) {
-    createTrayWindow();
-  }
-
-  // If it just blurred within the last 350ms, user clicked the tray icon to dismiss it.
-  // The blur handler already hid it, so do not immediately re-show.
-  const now = Date.now();
-  if (now - lastTrayBlurTime < 350) {
-    return;
-  }
-
-  if (trayWindow?.isVisible()) {
-    trayWindow.hide();
-  } else {
-    if (process.platform === 'darwin') {
-      trayWindow?.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-      trayWindow?.setAlwaysOnTop(true, 'status');
+  try {
+    if (!trayWindow || trayWindow.isDestroyed() || trayWindow.webContents.isDestroyed()) {
+      createTrayWindow();
     }
-    positionTrayWindow();
-    trayWindow?.show();
-    trayWindow?.focus();
-    trayWindow?.webContents.send('tray:shown');
+
+    if (!trayWindow || trayWindow.isDestroyed()) return;
+
+    // If it just blurred within the last 350ms, user clicked the tray icon to dismiss it.
+    // The blur handler already hid it, so do not immediately re-show.
+    const now = Date.now();
+    if (now - lastTrayBlurTime < 350) {
+      return;
+    }
+
+    if (trayWindow.isVisible()) {
+      trayWindow.hide();
+    } else {
+      if (process.platform === 'darwin') {
+        try {
+          trayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+          trayWindow.setAlwaysOnTop(true, 'floating');
+        } catch {}
+      }
+      positionTrayWindow();
+      trayWindow.show();
+      trayWindow.focus();
+
+      try {
+        if (!trayWindow.webContents.isDestroyed()) {
+          trayWindow.webContents.send('tray:shown');
+        }
+      } catch (err) {
+        console.warn('Could not send tray:shown:', err);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to toggle tray window:', err);
+    logErrorToFile('toggleTrayWindow', err);
   }
 }
 

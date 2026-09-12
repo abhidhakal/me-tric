@@ -47,6 +47,8 @@ function getTodayIso(): string {
 
 export class ActivityTracker {
   private isTracking = true;
+  private isProcessing = false;
+  private isSuspended = false;
   private timer: NodeJS.Timeout | null = null;
   private flushTimer: NodeJS.Timeout | null = null;
   private currentSummary: DailyActivitySummary | null = null;
@@ -67,6 +69,30 @@ export class ActivityTracker {
       } catch (err) {
         console.error('Failed to create activity storage directory', err);
       }
+    }
+
+    // Suspend activity tracking when Mac sleeps or screen locks to prevent process accumulation
+    try {
+      powerMonitor.on('suspend', () => {
+        this.isSuspended = true;
+      });
+      powerMonitor.on('resume', () => {
+        this.isSuspended = false;
+        if (this.isTracking && !this.timer) {
+          this.scheduleNextTick(1000);
+        }
+      });
+      powerMonitor.on('lock-screen', () => {
+        this.isSuspended = true;
+      });
+      powerMonitor.on('unlock-screen', () => {
+        this.isSuspended = false;
+        if (this.isTracking && !this.timer) {
+          this.scheduleNextTick(1000);
+        }
+      });
+    } catch (e) {
+      console.warn('powerMonitor listeners setup note:', e);
     }
   }
 
@@ -92,18 +118,33 @@ export class ActivityTracker {
   }
 
   public startTracking() {
-    if (this.timer) clearInterval(this.timer);
+    this.stopTracking();
     this.isTracking = true;
-    this.timer = setInterval(() => this.tick(), 2000);
+    this.scheduleNextTick(1000);
   }
 
   public stopTracking() {
     this.isTracking = false;
     if (this.timer) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = null;
     }
     this.saveCurrentSummary();
+  }
+
+  private scheduleNextTick(delayMs = 3000) {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    if (this.isTracking && !this.isSuspended) {
+      this.timer = setTimeout(() => {
+        this.timer = null;
+        this.tick().catch((err) => {
+          console.warn('ActivityTracker unhandled tick error caught safely:', err);
+        });
+      }, delayMs);
+    }
   }
 
   public toggleTracking(enabled?: boolean): boolean {
@@ -186,36 +227,44 @@ export class ActivityTracker {
   }
 
   private async tick() {
-    if (!this.isTracking) return;
+    if (!this.isTracking || this.isProcessing || this.isSuspended) return;
+    this.isProcessing = true;
 
-    const today = getTodayIso();
-    if (!this.currentSummary || this.currentSummary.date !== today) {
-      this.saveCurrentSummary();
-      this.loadTodaySummary();
-    }
+    const stepSeconds = 3;
 
-    if (!this.currentSummary) return;
-
-    // 1. Idle Detection via Electron powerMonitor
-    const idleSeconds = powerMonitor.getSystemIdleTime();
-    this.idleSeconds = idleSeconds;
-
-    // If user has been idle for more than 180 seconds (3 minutes), record idle time
-    if (idleSeconds >= 180) {
-      this.isIdle = true;
-      this.currentSummary.totalIdleSeconds += 2;
-      this.isDirty = true;
-      return;
-    }
-
-    this.isIdle = false;
-
-    // 2. Query Frontmost Window & App
     try {
+      const today = getTodayIso();
+      if (!this.currentSummary || this.currentSummary.date !== today) {
+        this.saveCurrentSummary();
+        this.loadTodaySummary();
+      }
+
+      if (!this.currentSummary) return;
+
+      // 1. Idle Detection via Electron powerMonitor
+      let idleSeconds = 0;
+      try {
+        idleSeconds = powerMonitor.getSystemIdleTime();
+      } catch {
+        idleSeconds = 0;
+      }
+      this.idleSeconds = idleSeconds;
+
+      // If user has been idle for more than 180 seconds (3 minutes), record idle time
+      if (idleSeconds >= 180) {
+        this.isIdle = true;
+        this.currentSummary.totalIdleSeconds += stepSeconds;
+        this.isDirty = true;
+        return;
+      }
+
+      this.isIdle = false;
+
+      // 2. Query Frontmost Window & App
       const data = await this.queryFrontWindow();
-      const appName = data.app?.trim() || 'Unknown';
-      const bundleId = data.bundleId?.trim() || '';
-      const windowTitle = data.title?.trim() || '';
+      const appName = data?.app?.trim() || 'Unknown';
+      const bundleId = data?.bundleId?.trim() || '';
+      const windowTitle = data?.title?.trim() || '';
 
       if (windowTitle) {
         this.hasAccessibility = true;
@@ -230,26 +279,28 @@ export class ActivityTracker {
       this.currentCategory = category;
       this.currentProject = project;
 
-      // Accumulate Active Time (2 seconds step)
-      this.currentSummary.totalActiveSeconds += 2;
-      this.currentSummary.categoryBreakdown[category] = (this.currentSummary.categoryBreakdown[category] || 0) + 2;
+      // Accumulate Active Time
+      this.currentSummary.totalActiveSeconds += stepSeconds;
+      this.currentSummary.categoryBreakdown[category] =
+        (this.currentSummary.categoryBreakdown[category] || 0) + stepSeconds;
 
       // Deep Work is Development, Design, or Writing
       if (category === 'development' || category === 'design' || category === 'writing') {
-        this.currentSummary.deepWorkSeconds += 2;
+        this.currentSummary.deepWorkSeconds += stepSeconds;
       }
 
       // Hourly Activity
       const currentHour = new Date().getHours();
-      this.currentSummary.hourlyActivity[currentHour] = (this.currentSummary.hourlyActivity[currentHour] || 0) + 2;
+      this.currentSummary.hourlyActivity[currentHour] =
+        (this.currentSummary.hourlyActivity[currentHour] || 0) + stepSeconds;
 
       // Update Top Apps
       const existingApp = this.currentSummary.topApps.find((a) => a.appName === appName);
       if (existingApp) {
-        existingApp.durationSeconds += 2;
+        existingApp.durationSeconds += stepSeconds;
         existingApp.category = category;
       } else {
-        this.currentSummary.topApps.push({ appName, durationSeconds: 2, category });
+        this.currentSummary.topApps.push({ appName, durationSeconds: stepSeconds, category });
       }
       this.currentSummary.topApps.sort((a, b) => b.durationSeconds - a.durationSeconds);
 
@@ -257,24 +308,36 @@ export class ActivityTracker {
       if (project) {
         const existingProject = this.currentSummary.topProjects.find((p) => p.project === project);
         if (existingProject) {
-          existingProject.durationSeconds += 2;
+          existingProject.durationSeconds += stepSeconds;
         } else {
-          this.currentSummary.topProjects.push({ project, durationSeconds: 2 });
+          this.currentSummary.topProjects.push({ project, durationSeconds: stepSeconds });
         }
         this.currentSummary.topProjects.sort((a, b) => b.durationSeconds - a.durationSeconds);
       }
 
       this.isDirty = true;
     } catch (err) {
-      // Graceful ignore on query failure
+      console.warn('ActivityTracker tick error caught safely:', err);
+    } finally {
+      this.isProcessing = false;
+      this.scheduleNextTick(stepSeconds * 1000);
     }
   }
 
   private async queryFrontWindow(): Promise<{ app: string; bundleId: string; title: string }> {
+    if (this.isSuspended) {
+      return { app: 'Unknown', bundleId: '', title: '' };
+    }
+
     if (process.platform === 'darwin') {
       try {
-        const { stdout } = await execFileAsync('/usr/bin/osascript', ['-l', 'JavaScript', '-e', GET_FRONT_APP_JXA]);
-        return JSON.parse(stdout.trim());
+        const { stdout } = await execFileAsync('/usr/bin/osascript', ['-l', 'JavaScript', '-e', GET_FRONT_APP_JXA], {
+          timeout: 2000,
+          maxBuffer: 512 * 1024,
+        });
+        const trimmed = (stdout || '').trim();
+        if (!trimmed) return { app: 'Unknown', bundleId: '', title: '' };
+        return JSON.parse(trimmed);
       } catch {
         return { app: 'Unknown', bundleId: '', title: '' };
       }
@@ -292,14 +355,18 @@ export class ActivityTracker {
           '$pr = Get-Process -Id $p -ErrorAction SilentlyContinue; ' +
           '@{ app = ($pr.ProcessName); bundleId = ($pr.ProcessName); title = ($sb.ToString()) } | ConvertTo-Json -Compress';
 
-        const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-NonInteractive', '-Command', psCommand]);
-        return JSON.parse(stdout.trim());
+        const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-NonInteractive', '-Command', psCommand], {
+          timeout: 2000,
+          maxBuffer: 512 * 1024,
+        });
+        const trimmed = (stdout || '').trim();
+        if (!trimmed) return { app: 'Unknown', bundleId: '', title: '' };
+        return JSON.parse(trimmed);
       } catch {
         return { app: 'Unknown', bundleId: '', title: '' };
       }
     }
 
-    return { app: 'Unknown', bundleId: '', title: '' };
   }
 
   private categorize(appName: string, bundleId: string, title: string): ActivityCategory {
