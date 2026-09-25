@@ -171,9 +171,9 @@ export const QuickLogModal: React.FC = () => {
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
-            <h3 className="modal-title">What do you want to record?</h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              Logging for {activeDate}
+            <h3 className="modal-title">Log</h3>
+            <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', marginTop: 2 }}>
+              Logging for {new Date(`${activeDate}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
           </div>
           <button className="icon-btn" onClick={closeQuickLog}>
@@ -206,7 +206,7 @@ export const QuickLogModal: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <label className="form-label">Duration</label>
                 {accumulatedMinutes > 0 && (
-                  <span style={{ fontSize: '0.8rem', color: '#ffffff', fontWeight: 700 }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: '#ffffff', fontWeight: 700 }}>
                     Preset: {formatDuration(accumulatedMinutes)}
                   </span>
                 )}

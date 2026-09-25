@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
   X,
-  Settings,
   FolderOpen,
   Download,
   Upload,
@@ -94,26 +93,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Header */}
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-              }}
-            >
-              <Settings size={17} strokeWidth={2} />
-            </div>
             <div>
               <h3 className="modal-title">Settings</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Application configuration, backups & storage
-              </span>
             </div>
           </div>
 
@@ -143,7 +124,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               border: 'none',
               borderRadius: '6px',
               color: activeSection === 'general' ? '#ffffff' : 'var(--text-muted)',
-              fontSize: '0.8rem',
+              fontSize: 'var(--fs-body)',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -154,7 +135,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }}
           >
             <Info size={13} />
-            <span>General & Updates</span>
+            <span>General</span>
             {availableUpdate && (
               <span
                 style={{
@@ -177,7 +158,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               border: 'none',
               borderRadius: '6px',
               color: activeSection === 'storage' ? '#ffffff' : 'var(--text-muted)',
-              fontSize: '0.8rem',
+              fontSize: 'var(--fs-body)',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -188,7 +169,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }}
           >
             <HardDrive size={13} />
-            <span>Database & Backups</span>
+            <span>Data</span>
           </button>
 
           <button
@@ -201,7 +182,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               border: 'none',
               borderRadius: '6px',
               color: activeSection === 'danger' ? '#ef4444' : 'var(--text-muted)',
-              fontSize: '0.8rem',
+              fontSize: 'var(--fs-body)',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -212,7 +193,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }}
           >
             <ShieldAlert size={13} />
-            <span>Danger Zone</span>
+            <span>Reset</span>
           </button>
         </div>
 
@@ -233,9 +214,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#ffffff' }}>MeTric Desktop</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                    Current Version: v{availableUpdate?.currentVersion || '1.0.6'}
+                  <div style={{ fontSize: 'var(--fs-item)', fontWeight: 600, color: '#ffffff' }}>MeTric Desktop</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', marginTop: 2 }}>
+                    v{availableUpdate?.currentVersion || __APP_VERSION__} · <a
+                    href="https://github.com/abhidhakal/me-tric/releases"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      color: 'var(--text-secondary)',
+                      fontSize: 'var(--fs-caption)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span>Release notes</span>
+                    <ExternalLink size={12} />
+                  </a>
                   </div>
                 </div>
 
@@ -247,7 +243,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     height: 32,
                     padding: '0 12px',
                     borderRadius: '8px',
-                    fontSize: '0.78rem',
+                    fontSize: 'var(--fs-caption)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
@@ -261,37 +257,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '12px',
-                  padding: 14,
-                }}
-              >
-                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
-                  Release Information
-                </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 10 }}>
-                  MeTric is an offline-first personal tracker with zero cloud reliance. Check GitHub for full changelogs and downloads.
-                </p>
-                <a
-                  href="https://github.com/abhidhakal/me-tric/releases"
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.78rem',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <span>View Releases on GitHub</span>
-                  <ExternalLink size={12} />
-                </a>
-              </div>
+
             </div>
           )}
 
@@ -307,12 +273,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff' }}>Storage Location</div>
+                  <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: '#ffffff' }}>Storage Location</div>
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={() => openDataFolder()}
-                    style={{ height: 30, padding: '0 10px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    style={{ height: 30, padding: '0 10px', fontSize: 'var(--fs-caption)', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   >
                     <FolderOpen size={13} />
                     <span>Show in Finder</span>
@@ -323,8 +289,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     background: 'rgba(0, 0, 0, 0.4)',
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.72rem',
+                    fontSize: 'var(--fs-caption)',
                     color: 'var(--text-muted)',
                     wordBreak: 'break-all',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
@@ -354,19 +319,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
+                    <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
                       Export Backup
                     </div>
-                    <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                      Save a complete JSON snapshot of all metrics, goals, and history.
-                    </p>
                   </div>
 
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={handleExport}
-                    style={{ height: 32, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    style={{ height: 32, fontSize: 'var(--fs-caption)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                   >
                     <Download size={13} />
                     <span>Export JSON</span>
@@ -386,19 +348,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
+                    <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
                       Restore Backup
                     </div>
-                    <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                      Restore your data from a previously exported JSON backup file.
-                    </p>
                   </div>
 
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={() => fileInputRef.current?.click()}
-                    style={{ height: 32, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    style={{ height: 32, fontSize: 'var(--fs-caption)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                   >
                     <Upload size={13} />
                     <span>Restore JSON</span>
@@ -429,11 +388,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
             >
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>
+                <div style={{ fontSize: 'var(--fs-item)', fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>
                   Reset to Clean Slate
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  This action permanently deletes all logged metric entries, life events, and reminders. Configured metrics and goals are preserved with zero counts.
+                <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Deletes all logged entries, highlights and reminders. Metrics and goals are kept.
                 </p>
               </div>
 
@@ -448,7 +407,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     border: '1px solid rgba(239, 68, 68, 0.4)',
                     borderRadius: '8px',
                     color: '#ef4444',
-                    fontSize: '0.8rem',
+                    fontSize: 'var(--fs-body)',
                     fontWeight: 600,
                     cursor: 'pointer',
                     display: 'inline-flex',
@@ -484,7 +443,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             type="button"
             className="btn-secondary"
             onClick={onClose}
-            style={{ height: 34, padding: '0 18px', borderRadius: '8px', fontSize: '0.82rem' }}
+            style={{ height: 34, padding: '0 18px', borderRadius: '8px', fontSize: 'var(--fs-body)' }}
           >
             Close
           </button>

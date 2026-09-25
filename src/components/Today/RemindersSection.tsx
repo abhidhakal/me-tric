@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Bell, BellOff, Trash2, Check, Repeat, CornerDownLeft, Pencil } from 'lucide-react';
+import { Bell, BellOff, Trash2, Check, Plus } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { Reminder, ReminderRepeat } from '../../types';
 import { formatLocalDateTime, formatShortDate, getTodayIso, shiftDate } from '../../utils/dateUtils';
 import { requestNotificationPermission } from '../../utils/notifications';
 
 const REPEAT_LABELS: Record<ReminderRepeat, string> = {
-  none: 'Does not repeat',
+  none: 'Once',
   daily: 'Daily',
   weekly: 'Weekly',
   monthly: 'Monthly',
@@ -20,7 +20,7 @@ function defaultDateTime(): { date: string; time: string } {
   return { date, time };
 }
 
-function formatWhen(datetime: string): string {
+export function formatWhen(datetime: string): string {
   const [date, time] = datetime.split('T');
   const today = getTodayIso();
   const day = date === today ? 'Today' : date === shiftDate(today, 1) ? 'Tomorrow' : formatShortDate(date);
@@ -68,178 +68,124 @@ export const RemindersSection: React.FC = () => {
   );
   const now = formatLocalDateTime(new Date());
 
+  const composing = Boolean(title.trim() || editingId);
+
   return (
-    <div className="card-panel" style={{ marginTop: 14 }}>
+    <div className="section-block">
       <div className="panel-header">
         <span className="panel-title">Reminders</span>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: sorted.length ? 12 : 0 }}>
-        <input
-          type="text"
-          className="form-input"
-          style={{ flex: '1 1 100%', padding: '10px 14px', fontSize: '0.9rem' }}
-          placeholder="Reminder name"
-          onKeyDown={(e) => e.key === 'Escape' && resetForm()}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <input
-          type="date"
-          className="form-input"
-          style={{ width: 'auto' }}
-          value={date}
-          onChange={(e) => setWhen({ date: e.target.value, time })}
-          required
-        />
-        <input
-          type="time"
-          className="form-input"
-          style={{ width: 'auto' }}
-          value={time}
-          onChange={(e) => setWhen({ date, time: e.target.value })}
-          required
-        />
-        <select
-          className="form-select"
-          style={{ width: 'auto' }}
-          value={repeat}
-          onChange={(e) => setRepeat(e.target.value as ReminderRepeat)}
-          aria-label="Repeat"
-        >
-          {(Object.keys(REPEAT_LABELS) as ReminderRepeat[]).map((r) => (
-            <option key={r} value={r}>
-              {REPEAT_LABELS[r]}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setNotify((n) => !n)}
-          title={notify ? 'Notification on' : 'Notification off'}
-          aria-pressed={notify}
-          style={{ color: notify ? '#ffffff' : 'var(--text-muted)' }}
-        >
-          {notify ? <Bell size={15} /> : <BellOff size={15} />}
-        </button>
-        {editingId && (
-          <button type="button" className="btn-secondary" style={{ marginLeft: 'auto' }} onClick={resetForm}>
-            Cancel
-          </button>
-        )}
-        <button
-          type="submit"
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px', fontWeight: 600, fontSize: '0.86rem', marginLeft: editingId ? 0 : 'auto' }}
-        >
-          <span>{editingId ? 'Save' : 'Add'}</span>
-          <span className="btn-enter-badge">
-            <CornerDownLeft size={11} strokeWidth={2.5} />
-          </span>
-        </button>
-      </form>
+      <div className="list-card">
+        <form onSubmit={handleSubmit} className="reminder-composer">
+          <div className="list-row" style={{ gap: 10 }}>
+            <Plus size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              type="text"
+              className="inline-input"
+              placeholder={editingId ? 'Reminder name' : 'Type a reminder…'}
+              aria-label="Reminder name"
+              onKeyDown={(e) => e.key === 'Escape' && resetForm()}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
 
-      {sorted.length === 0 ? (
-        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '6px 0 2px 2px' }}>No reminders yet.</p>
-      ) : (
-        <div className="highlight-list">
-          {sorted.map((r) => {
-            const overdue = !r.completed && r.datetime <= now;
-            return (
-              <div
-                key={r.id}
-                className="highlight-item"
-                style={editingId === r.id ? { borderColor: 'var(--border-medium)' } : undefined}
+          {/* Date, time and repeat appear once there's something to schedule. */}
+          {composing && (
+            <div className="reminder-controls">
+              <input type="date" className="form-input" value={date} onChange={(e) => setWhen({ date: e.target.value, time })} aria-label="Date" required />
+              <input type="time" className="form-input" value={time} onChange={(e) => setWhen({ date, time: e.target.value })} aria-label="Time" required />
+              <select className="form-select" value={repeat} onChange={(e) => setRepeat(e.target.value as ReminderRepeat)} aria-label="Repeat">
+                {(Object.keys(REPEAT_LABELS) as ReminderRepeat[]).map((r) => (
+                  <option key={r} value={r}>
+                    {REPEAT_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setNotify((n) => !n)}
+                title={notify ? 'Notification on' : 'Notification off'}
+                aria-pressed={notify}
+                style={{ color: notify ? '#ffffff' : 'var(--text-muted)', width: 32, height: 32 }}
               >
-                <div className="highlight-left">
-                  <button
-                    type="button"
-                    onClick={() => completeReminder(r.id)}
-                    title={r.repeat === 'none' ? 'Mark done' : 'Done, move to next occurrence'}
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 4,
-                      border: `1px solid ${r.completed ? '#ffffff' : 'var(--border-medium)'}`,
-                      background: r.completed ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#000000',
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    {r.completed && <Check size={11} strokeWidth={3} />}
-                  </button>
+                {notify ? <Bell size={15} /> : <BellOff size={15} />}
+              </button>
+              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                <button type="button" className="btn-secondary" onClick={resetForm}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingId ? 'Save' : 'Add'}
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
 
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
-                    <span
-                      className="highlight-title"
-                      onClick={() => startEdit(r)}
-                      title="Edit reminder"
-                      style={{
-                        cursor: 'pointer',
-                        fontSize: '0.88rem',
-                        fontWeight: 500,
-                        color: r.completed ? 'var(--text-muted)' : '#ffffff',
-                        textDecoration: r.completed ? 'line-through' : 'none',
-                      }}
-                    >
-                      {r.title}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        fontFamily: 'var(--font-mono)',
-                        color: overdue ? '#f87171' : 'var(--text-secondary)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      {formatWhen(r.datetime)}
-                      {r.repeat !== 'none' && (
-                        <>
-                          <Repeat size={10} />
-                          {REPEAT_LABELS[r.repeat]}
-                        </>
-                      )}
-                    </span>
-                  </div>
+        {sorted.map((r) => {
+          const overdue = !r.completed && r.datetime <= now;
+          return (
+            <div
+              key={r.id}
+              className="list-row"
+              style={{ justifyContent: 'flex-start', gap: 12, background: editingId === r.id ? 'rgba(255, 255, 255, 0.03)' : undefined }}
+            >
+              <button
+                type="button"
+                className={`reminder-check${r.completed ? ' is-done' : ''}`}
+                onClick={() => completeReminder(r.id)}
+                title={r.repeat === 'none' ? 'Mark done' : 'Done, move to next occurrence'}
+                aria-label={r.repeat === 'none' ? `Mark ${r.title} done` : `Done, move ${r.title} to next time`}
+              >
+                {r.completed && <Check size={11} strokeWidth={3} />}
+              </button>
+
+              <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => startEdit(r)} title="Edit reminder">
+                <div
+                  style={{
+                    fontSize: 'var(--fs-item)',
+                    fontWeight: 600,
+                    color: r.completed ? 'var(--text-muted)' : '#ffffff',
+                    textDecoration: r.completed ? 'line-through' : 'none',
+                  }}
+                >
+                  {r.title}
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <button className="icon-btn" onClick={() => startEdit(r)} title="Edit reminder" style={{ color: 'var(--text-muted)' }}>
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={() => toggleReminderNotify(r.id)}
-                    title={r.notify ? 'Turn notification off' : 'Turn notification on'}
-                    style={{ color: r.notify ? '#ffffff' : 'var(--text-muted)' }}
-                  >
-                    {r.notify ? <Bell size={13} /> : <BellOff size={13} />}
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={() => {
-                      if (editingId === r.id) resetForm();
-                      deleteReminder(r.id);
-                    }}
-                    title="Delete reminder"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                <div className="item-sub" style={{ color: overdue ? '#f87171' : undefined }}>
+                  {formatWhen(r.datetime)}
+                  {r.repeat !== 'none' && ` · ${REPEAT_LABELS[r.repeat]}`}
+                  {!r.notify && ' · Silent'}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              <div className="item-actions">
+                <button
+                  className="icon-btn"
+                  onClick={() => toggleReminderNotify(r.id)}
+                  title={r.notify ? 'Turn notification off' : 'Turn notification on'}
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {r.notify ? <Bell size={13} /> : <BellOff size={13} />}
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={() => {
+                    if (editingId === r.id) resetForm();
+                    deleteReminder(r.id);
+                  }}
+                  title="Delete reminder"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Check, Award, AlertCircle, Sparkles, Calendar, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { localApi } from '../../services/localApi';
 import { ReviewComputedStats, Review } from '../../types';
@@ -7,8 +7,8 @@ import {
   getWeekRange,
   getMonthRange,
   getYearRange,
-  getIsoWeekKey,
-  shiftDate
+  shiftDate,
+  formatShortDate
 } from '../../utils/dateUtils';
 
 type ReviewPeriodType = 'week' | 'month' | 'year';
@@ -43,7 +43,7 @@ export const ReviewsView: React.FC = () => {
     periodKey = w.weekKey;
     startDate = w.start;
     endDate = w.end;
-    periodTitle = `Week ${w.weekNum} (${w.start} to ${w.end})`;
+    periodTitle = `Week ${w.weekNum} · ${formatShortDate(w.start)} – ${formatShortDate(w.end)}`;
   } else if (periodType === 'month') {
     const m = getMonthRange(targetDate);
     periodKey = m.monthKey;
@@ -161,58 +161,17 @@ export const ReviewsView: React.FC = () => {
 
       {/* 1. AUTO-COMPUTED SCORECARD */}
       {stats && (
-        <div className="card-panel">
+        <div className="section-block">
           <div className="panel-header">
-            <span className="panel-title">
-              <Award size={15} style={{ color: 'var(--text-secondary)' }} />
-              Automated Scorecard · {stats.periodLabel}
-            </span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Auto-aggregated from your daily logs
-            </span>
-          </div>
-
-          {/* Headline Summary Bullets */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            {stats.headlineSummary.length > 0 ? (
-              stats.headlineSummary.map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  {item}
-                </div>
-              ))
-            ) : (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                No metrics logged for this period yet.
-              </div>
-            )}
+            <span className="panel-title">Scorecard</span>
           </div>
 
           {/* Best Day, Strongest KPI, Missed KPI */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: 14,
-              borderTop: '1px solid var(--border-subtle)',
-              paddingTop: 18,
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: 12,
             }}
           >
             {/* Best Day */}
@@ -224,14 +183,14 @@ export const ReviewsView: React.FC = () => {
                 padding: '16px',
               }}
             >
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--text-muted)' }}>
                 Best Day
               </span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: 4 }}>
+              <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff', marginTop: 4 }}>
                 {stats.bestDay ? stats.bestDay.dayName : '—'}
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-                {stats.bestDay ? stats.bestDay.highlightReason : 'Log daily entries to reveal your peak day'}
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                {stats.bestDay ? stats.bestDay.highlightReason : ''}
               </p>
             </div>
 
@@ -244,14 +203,14 @@ export const ReviewsView: React.FC = () => {
                 padding: '16px',
               }}
             >
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-                Strongest KPI
+              <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--text-muted)' }}>
+                Strongest
               </span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: 4 }}>
+              <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff', marginTop: 4 }}>
                 {stats.strongestKpi ? stats.strongestKpi.metricName : '—'}
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-                {stats.strongestKpi ? `${stats.strongestKpi.percent}% of target achieved` : 'Set targets to track attainment'}
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                {stats.strongestKpi ? `${stats.strongestKpi.percent}% of target` : ''}
               </p>
             </div>
 
@@ -264,14 +223,14 @@ export const ReviewsView: React.FC = () => {
                 padding: '16px',
               }}
             >
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-                Friction / Missed
+              <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--text-muted)' }}>
+                Weakest
               </span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: 4 }}>
+              <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff', marginTop: 4 }}>
                 {stats.missedKpi ? stats.missedKpi.metricName : 'None'}
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-                {stats.missedKpi ? `${stats.missedKpi.percent}% of target achieved` : 'All target KPIs were met'}
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                {stats.missedKpi ? `${stats.missedKpi.percent}% of target` : 'All targets met'}
               </p>
             </div>
           </div>
@@ -280,25 +239,19 @@ export const ReviewsView: React.FC = () => {
 
       {/* 2. HIGHLIGHT REEL */}
       {stats && stats.events.length > 0 && (
-        <div className="card-panel">
+        <div className="section-block">
           <div className="panel-header">
-            <span className="panel-title">
-              <Sparkles size={15} style={{ color: 'var(--text-secondary)' }} />
-              Highlight Reel ({stats.events.length})
-            </span>
+            <span className="panel-title">Highlights</span>
           </div>
 
-          <div className="highlight-list">
+          <div className="list-card">
             {stats.events.map((ev) => (
-              <div key={ev.id} className="highlight-item">
-                <div className="highlight-left">
-                  <span className="highlight-bullet">+</span>
-                  <div>
-                    <div className="highlight-title">{ev.title}</div>
-                    {ev.description && <div className="highlight-desc">{ev.description}</div>}
-                  </div>
+              <div key={ev.id} className="list-row">
+                <div style={{ minWidth: 0 }}>
+                  <div className="highlight-title">{ev.title}</div>
+                  {ev.description && <div className="highlight-desc">{ev.description}</div>}
                 </div>
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>{ev.date}</span>
+                <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatShortDate(ev.date)}</span>
               </div>
             ))}
           </div>
@@ -306,68 +259,33 @@ export const ReviewsView: React.FC = () => {
       )}
 
       {/* 3. STRUCTURED REFLECTION PROMPTS */}
-      <form onSubmit={handleSave} className="card-panel">
-        <div className="panel-header">
-          <span className="panel-title">
-            <BookOpen size={15} style={{ color: 'var(--text-secondary)' }} />
-            Personal Reflection
-          </span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Manual reflection to drive continuous improvement
-          </span>
+      <div className="panel-header">
+        <span className="panel-title">Reflection</span>
+      </div>
+      <form onSubmit={handleSave}>
+        <div className="list-card">
+          {[
+            { label: 'What went well?', value: wentWell, set: setWentWell },
+            { label: "What didn't?", value: didntGoWell, set: setDidntGoWell },
+            { label: `Focus for next ${periodType}`, value: focus, set: setFocus },
+          ].map((field) => (
+            <label key={field.label} className="list-row reflection-row">
+              <span className="item-title">{field.label}</span>
+              <textarea
+                className="inline-input reflection-input"
+                rows={2}
+                placeholder="Write here…"
+                value={field.value}
+                onChange={(e) => field.set(e.target.value)}
+              />
+            </label>
+          ))}
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div className="form-group">
-            <label className="form-label">
-              1. What went well?
-            </label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              placeholder="What worked? What habits or wins made you proud?"
-              value={wentWell}
-              onChange={(e) => setWentWell(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              2. What didn't go well?
-            </label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              placeholder="Where was there friction, distraction, or missed targets?"
-              value={didntGoWell}
-              onChange={(e) => setDidntGoWell(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              3. What should I focus on next {periodType}?
-            </label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              placeholder={`Key priority and commitments for next ${periodType}...`}
-              value={focus}
-              onChange={(e) => setFocus(e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isSaving}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
-              <Save size={16} />
-              <span>{isSaving ? 'Saving...' : 'Save Reflection'}</span>
-            </button>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+          <button type="submit" className="btn-secondary" disabled={isSaving}>
+            <Save size={14} />
+            <span>{isSaving ? 'Saving…' : 'Save'}</span>
+          </button>
         </div>
       </form>
     </div>

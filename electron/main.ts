@@ -249,12 +249,126 @@ ipcMain.handle('app:openMainWindow', () => {
   return true;
 });
 
+ipcMain.handle('app:quit', () => {
+  isQuitting = true;
+  app.quit();
+});
+
 ipcMain.handle('tray:hide', () => {
   if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
     trayWindow.hide();
   }
   return true;
 });
+
+// The renderer handles these by name (see TrackerContext): tab:<id>, quick-log, settings, profile.
+function sendMenuAction(action: string) {
+  showMainWindow();
+  mainWindow?.webContents.send('menu:action', action);
+}
+
+function showDatabaseInFinder() {
+  ensureStorageDirs();
+  if (fs.existsSync(dbFilePath)) shell.showItemInFolder(dbFilePath);
+  else shell.openPath(userDataPath);
+}
+
+// macOS menu bar: the app menu beside the Apple icon, plus File / Edit / View / Window / Help.
+function buildAppMenu() {
+  app.setAboutPanelOptions({
+    applicationName: 'MeTric',
+    applicationVersion: app.getVersion(),
+    copyright: 'Local-first personal goal tracker',
+  });
+
+  const repo = 'https://github.com/abhidhakal/me-tric';
+  const tab = (label: string, id: string, key: string): Electron.MenuItemConstructorOptions => ({
+    label,
+    accelerator: `CmdOrCtrl+${key}`,
+    click: () => sendMenuAction(`tab:${id}`),
+  });
+
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'MeTric',
+        submenu: [
+          { role: 'about', label: 'About MeTric' },
+          {
+            label: 'Check for Updates…',
+            click: () => {
+              showMainWindow();
+              mainWindow?.webContents.send('updater:open-modal');
+            },
+          },
+          { type: 'separator' },
+          { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => sendMenuAction('settings') },
+          { label: 'Edit Profile…', click: () => sendMenuAction('profile') },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide', label: 'Hide MeTric' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          {
+            label: 'Quit MeTric',
+            accelerator: 'CmdOrCtrl+Q',
+            click: () => {
+              isQuitting = true;
+              app.quit();
+            },
+          },
+        ],
+      },
+      {
+        label: 'File',
+        submenu: [
+          { label: 'Quick Log…', accelerator: 'CmdOrCtrl+K', click: () => sendMenuAction('quick-log') },
+          { type: 'separator' },
+          { label: 'Show Data in Finder', click: showDatabaseInFinder },
+          { type: 'separator' },
+          { role: 'close' },
+        ],
+      },
+      { role: 'editMenu' },
+      {
+        label: 'View',
+        submenu: [
+          tab('Today', 'today', '1'),
+          tab('Plan', 'plan', '2'),
+          tab('Progress', 'progress', '3'),
+          tab('Activity', 'activity', '4'),
+          tab('Reviews', 'reviews', '5'),
+          { type: 'separator' },
+          // The renderer owns ⌘\ (toggling twice would cancel out), so the menu only displays it.
+          {
+            label: 'Toggle Sidebar',
+            accelerator: 'CmdOrCtrl+\\',
+            registerAccelerator: false,
+            click: () => sendMenuAction('toggle-sidebar'),
+          },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' },
+          ...(app.isPackaged ? [] : [{ type: 'separator' as const }, { role: 'reload' as const }, { role: 'toggleDevTools' as const }]),
+        ],
+      },
+      { role: 'windowMenu' },
+      {
+        role: 'help',
+        submenu: [
+          { label: 'Release Notes', click: () => shell.openExternal(`${repo}/releases`) },
+          { label: 'Report an Issue', click: () => shell.openExternal(`${repo}/issues`) },
+          { label: 'MeTric on GitHub', click: () => shell.openExternal(repo) },
+        ],
+      },
+    ])
+  );
+}
 
 function createWindow() {
   const iconPngPath = path.join(__dirname, '../build/icon.png');
@@ -326,7 +440,7 @@ function createTrayWindow() {
 
   trayWindow = new BrowserWindow({
     width: 360,
-    height: 480,
+    height: 560,
     show: false,
     frame: false,
     resizable: false,
@@ -544,14 +658,7 @@ function createTray() {
       },
       {
         label: 'Show Database in Finder',
-        click: () => {
-          ensureStorageDirs();
-          if (fs.existsSync(dbFilePath)) {
-            shell.showItemInFolder(dbFilePath);
-          } else {
-            shell.openPath(userDataPath);
-          }
-        },
+        click: showDatabaseInFinder,
       },
       {
         label: 'Check for Updates...',
@@ -586,6 +693,7 @@ function createTray() {
 
 app.whenReady().then(() => {
   createWindow();
+  if (process.platform === 'darwin') buildAppMenu();
   createTray();
   createTrayWindow();
   activityTracker.init();

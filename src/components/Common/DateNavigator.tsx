@@ -188,7 +188,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
             color: '#ffffff',
             padding: '4px 10px',
             borderRadius: '6px',
-            fontSize: '0.82rem',
+            fontSize: 'var(--fs-body)',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
@@ -251,7 +251,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
             border: '1px solid rgba(255, 255, 255, 0.18)',
             borderRadius: 'var(--radius-md)',
             color: '#ffffff',
-            fontSize: '0.76rem',
+            fontSize: 'var(--fs-caption)',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
@@ -304,7 +304,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
               padding: '0 2px',
             }}
           >
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+            <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#ffffff' }}>
               {monthName}
             </span>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -361,7 +361,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
               <span
                 key={d}
                 style={{
-                  fontSize: '0.68rem',
+                  fontSize: 'var(--fs-caption)',
                   fontWeight: 600,
                   color: 'var(--text-muted)',
                   padding: '2px 0',
@@ -403,7 +403,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
                       : cDay.isCurrentMonth
                       ? '#ffffff'
                       : 'rgba(255, 255, 255, 0.25)',
-                    fontSize: '0.76rem',
+                    fontSize: 'var(--fs-caption)',
                     fontWeight: isSelected ? 700 : isDayToday ? 600 : 400,
                     cursor: 'pointer',
                     position: 'relative',

@@ -1,555 +1,137 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ArrowUpRight, Pause, Play, Power } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
-import {
-  Maximize2,
-  Circle,
-  Plus,
-  Minus,
-  Check,
-  Zap,
-  Clock,
-  Play,
-  Pause,
-} from 'lucide-react';
+import { formatLocalDateTime } from '../../utils/dateUtils';
+import { formatDuration } from '../../utils/formatters';
+import { OVER_STYLE, STEPS, useTodayMetrics } from '../Today/useTodayMetrics';
+import { formatWhen } from '../Today/RemindersSection';
 
+// Menu bar popover: a compact Today. Log a highlight, bump metrics, tick off reminders.
 export const TrayPopover: React.FC = () => {
-  const {
-    metrics,
-    todayEntries,
-    reminders,
-    completeReminder,
-    logMetric,
-    activityStatus,
-    activitySummary,
-    toggleActivityTracking,
-    refreshData,
-  } = useTracker();
+  const { reminders, completeReminder, logMetric, logEvent, activityStatus, activitySummary, toggleActivityTracking, refreshData } =
+    useTracker();
+  const tiles = useTodayMetrics();
+  const [highlight, setHighlight] = useState('');
 
-  // Keep data completely synchronized whenever the tray popover is opened or focused
-  React.useEffect(() => {
-    try {
-      refreshData();
-    } catch {}
-
-    const handleFocus = () => {
-      try {
-        refreshData();
-      } catch {}
-    };
-    window.addEventListener('focus', handleFocus);
-
-    let cleanup: (() => void) | undefined;
-    if (typeof window !== 'undefined' && window.electronAPI?.onTrayShown) {
-      try {
-        cleanup = window.electronAPI.onTrayShown(() => {
-          try {
-            refreshData();
-          } catch {}
-        });
-      } catch {}
-    }
-
+  // The popover window stays alive between opens, so refresh whenever it's shown; Escape hides it.
+  useEffect(() => {
+    const api = window.electronAPI;
+    const cleanup = api?.onTrayShown?.(() => refreshData());
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && api?.hideTrayPopover?.();
+    window.addEventListener('focus', refreshData);
+    window.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      if (cleanup) {
-        try {
-          cleanup();
-        } catch {}
-      }
+      cleanup?.();
+      window.removeEventListener('focus', refreshData);
+      window.removeEventListener('keydown', onKey);
     };
   }, [refreshData]);
 
-  // Active enabled metrics
-  const activeMetrics = useMemo(() => {
-    return metrics.filter((m) => m.enabled !== false);
-  }, [metrics]);
-
-  const [selectedMetricId, setSelectedMetricId] = useState<string>(() => {
-    return activeMetrics[0]?.id || '';
-  });
-
-  // Keep selectedMetricId in sync if empty
-  React.useEffect(() => {
-    if (!selectedMetricId && activeMetrics.length > 0) {
-      setSelectedMetricId(activeMetrics[0].id);
-    }
-  }, [activeMetrics, selectedMetricId]);
-
-  const currentMetric = useMemo(() => {
-    return activeMetrics.find((m) => m.id === selectedMetricId) || activeMetrics[0];
-  }, [activeMetrics, selectedMetricId]);
-
-  // Current metric value today
-  const currentMetricTodayTotal = useMemo(() => {
-    if (!currentMetric) return 0;
-    const entries = todayEntries.filter((e) => e.metricId === currentMetric.id);
-    if (entries.length === 0) return 0;
-    if (currentMetric.type === 'rating') {
-      return entries[entries.length - 1].value;
-    }
-    return entries.reduce((sum, e) => sum + e.value, 0);
-  }, [todayEntries, currentMetric]);
-
-  // Quick log input state
-  const defaultStep = useMemo(() => {
-    if (!currentMetric) return 1;
-    if (currentMetric.type === 'boolean') return 1;
-    const unit = currentMetric.unit?.toLowerCase() || '';
-    if (unit.includes('ml')) return 250;
-    if (unit.includes('min')) return 15;
-    if (unit.includes('page')) return 5;
-    if (unit.includes('cal')) return 100;
-    return 1;
-  }, [currentMetric]);
-
-  const [logValue, setLogValue] = useState<number>(defaultStep);
-  const [justLogged, setJustLogged] = useState(false);
-  const [isTogglingActivity, setIsTogglingActivity] = useState(false);
-
-  // Update default logValue when metric changes
-  React.useEffect(() => {
-    setLogValue(defaultStep);
-  }, [defaultStep, selectedMetricId]);
-
-  const handleLog = async () => {
-    if (!currentMetric) return;
-    try {
-      await logMetric(currentMetric.id, Number(logValue));
-      setJustLogged(true);
-      setTimeout(() => setJustLogged(false), 1800);
-    } catch (err) {
-      console.error('Failed to quick-log from tray:', err);
-    }
+  const submitHighlight = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!highlight.trim()) return;
+    await logEvent(highlight.trim());
+    setHighlight('');
   };
 
-  const handleOpenMain = () => {
-    if (typeof window !== 'undefined' && window.electronAPI?.openMainWindow) {
-      window.electronAPI.openMainWindow();
-    }
-  };
-
-  const handleToggleTracking = async () => {
-    setIsTogglingActivity(true);
-    try {
-      await toggleActivityTracking();
-    } finally {
-      setIsTogglingActivity(false);
-    }
-  };
-
-  // Date display
-  const todayFormatted = useMemo(() => {
-    const d = new Date();
-    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  }, []);
-
-  // Format active seconds
-  const formattedActiveTime = useMemo(() => {
-    const secs = activitySummary?.totalActiveSeconds || 0;
-    const hours = Math.floor(secs / 3600);
-    const mins = Math.floor((secs % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins}m`;
-  }, [activitySummary?.totalActiveSeconds]);
-
-  const upcomingReminders = reminders
+  const now = formatLocalDateTime(new Date());
+  const upcoming = reminders
     .filter((r) => !r.completed)
     .sort((a, b) => a.datetime.localeCompare(b.datetime))
     .slice(0, 4);
+  const tracking = activityStatus?.isTracking;
+  const activeMinutes = Math.floor((activitySummary?.totalActiveSeconds || 0) / 60);
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        background: 'rgba(9, 9, 12, 0.96)',
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)',
-        color: '#ffffff',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        borderRadius: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-        userSelect: 'none',
-        overflow: 'hidden',
-        fontFamily: 'var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif)',
-      }}
-    >
-      {/* Top Header */}
-      <div
-        style={{
-          padding: '14px 16px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-          background: 'rgba(255, 255, 255, 0.02)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
-            style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
-              background: '#ffffff',
-              color: '#000000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '12px',
-              letterSpacing: '-0.5px',
-            }}
-          >
-            M
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '-0.2px' }}>MeTric</div>
-            <div style={{ fontSize: '11px', color: '#a1a1aa' }}>{todayFormatted}</div>
-          </div>
-        </div>
-
-        {/* Activity tracking pill */}
+    <div className="tray">
+      <header className="tray-header">
+        <span className="tray-date">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
         <button
-          onClick={handleToggleTracking}
-          disabled={isTogglingActivity}
-          title={activityStatus?.isTracking ? 'Tracking Active (Click to Pause)' : 'Tracking Paused (Click to Resume)'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: activityStatus?.isTracking
-              ? 'rgba(34, 197, 94, 0.12)'
-              : 'rgba(255, 255, 255, 0.06)',
-            border: activityStatus?.isTracking
-              ? '1px solid rgba(34, 197, 94, 0.28)'
-              : '1px solid rgba(255, 255, 255, 0.1)',
-            padding: '4px 10px',
-            borderRadius: '20px',
-            color: activityStatus?.isTracking ? '#4ade80' : '#a1a1aa',
-            fontSize: '11px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
+          className="tray-pill"
+          onClick={() => toggleActivityTracking()}
+          title={tracking ? 'Pause screen time tracking' : 'Resume screen time tracking'}
         >
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: activityStatus?.isTracking ? '#22c55e' : '#71717a',
-              boxShadow: activityStatus?.isTracking ? '0 0 8px #22c55e' : 'none',
-            }}
+          <span className={`tray-dot${tracking ? ' is-on' : ''}`} />
+          {tracking ? formatDuration(activeMinutes) : 'Paused'}
+          {tracking ? <Pause size={10} /> : <Play size={10} />}
+        </button>
+      </header>
+
+      <div className="tray-body">
+        <form onSubmit={submitHighlight} style={{ display: 'flex', gap: 8 }}>
+          <input
+            className="form-input"
+            style={{ flex: 1, minWidth: 0 }}
+            placeholder="What did you do?"
+            value={highlight}
+            onChange={(e) => setHighlight(e.target.value)}
           />
-          {activityStatus?.isTracking ? (
-            <span>{formattedActiveTime}</span>
-          ) : (
-            <span>Paused</span>
-          )}
-          {activityStatus?.isTracking ? (
-            <Pause size={10} style={{ marginLeft: '2px', opacity: 0.7 }} />
-          ) : (
-            <Play size={10} style={{ marginLeft: '2px', opacity: 0.7 }} />
-          )}
-        </button>
-      </div>
+          <button type="submit" className="btn-primary" style={{ padding: '0 14px' }}>
+            Log
+          </button>
+        </form>
 
-      {/* Main Content Area */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '14px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px',
-        }}
-      >
-        {/* Quick Log Box */}
-        <div
-          style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            padding: '12px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '10px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: '#d4d4d8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              <Zap size={12} color="#ffffff" />
-              <span>Quick Log</span>
-            </div>
-            {currentMetric && (
-              <div style={{ fontSize: '11px', color: '#a1a1aa' }}>
-                Today:{' '}
-                <span style={{ color: '#ffffff', fontWeight: 600 }}>
-                  {currentMetricTodayTotal} {currentMetric.unit || ''}
+        <section>
+          <div className="tray-section-title">Metrics</div>
+          {tiles.map(({ metric, value, target, percent, over, period }) => (
+            <div key={metric.id} className="tray-metric">
+              <div className="tray-metric-top">
+                <span className="tray-metric-name">{metric.name}</span>
+                <span className="tray-metric-value">
+                  {value}
+                  {target && <span className="metric-target"> / {target}</span>}
                 </span>
-                {currentMetric.targetValue && (
-                  <span style={{ color: '#71717a' }}> / {currentMetric.targetValue}</span>
-                )}
               </div>
-            )}
-          </div>
-
-          {/* Metric Selector Pills */}
-          {activeMetrics.length > 0 ? (
-            <div
-              style={{
-                display: 'flex',
-                gap: '6px',
-                overflowX: 'auto',
-                paddingBottom: '8px',
-                marginBottom: '10px',
-                scrollbarWidth: 'none',
-              }}
-            >
-              {activeMetrics.slice(0, 6).map((metric) => {
-                const isSelected = metric.id === (currentMetric?.id || selectedMetricId);
-                return (
-                  <button
-                    key={metric.id}
-                    onClick={() => setSelectedMetricId(metric.id)}
-                    style={{
-                      background: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.06)',
-                      color: isSelected ? '#000000' : '#d4d4d8',
-                      border: isSelected ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.08)',
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: isSelected ? 600 : 400,
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
-                      transition: 'all 0.12s ease',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {metric.name}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#71717a', padding: '6px 0' }}>
-              No active metrics configured yet.
-            </div>
-          )}
-
-          {/* Stepper / Input & Log Button */}
-          {currentMetric && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  background: 'rgba(0, 0, 0, 0.4)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '8px',
-                  padding: '2px',
-                  flex: 1,
-                }}
-              >
-                <button
-                  onClick={() => setLogValue((v) => Math.max(0, v - defaultStep))}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#a1a1aa',
-                    padding: '6px 8px',
-                    cursor: 'pointer',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Minus size={13} />
-                </button>
-                <input
-                  type="number"
-                  value={logValue}
-                  onChange={(e) => setLogValue(Number(e.target.value))}
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    textAlign: 'center',
-                    color: '#ffffff',
-                    fontWeight: 600,
-                    fontSize: '13px',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={() => setLogValue((v) => v + defaultStep)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#a1a1aa',
-                    padding: '6px 8px',
-                    cursor: 'pointer',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Plus size={13} />
-                </button>
-              </div>
-
-              <button
-                onClick={handleLog}
-                disabled={justLogged}
-                style={{
-                  background: justLogged ? '#22c55e' : '#ffffff',
-                  color: justLogged ? '#ffffff' : '#000000',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                  flexShrink: 0,
-                }}
-              >
-                {justLogged ? (
-                  <>
-                    <Check size={14} /> Logged!
-                  </>
-                ) : (
-                  <>
-                    <span>+ Log</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Today's Tasks & Checklist */}
-        <div
-          style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            padding: '12px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '8px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: '#d4d4d8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              <Clock size={12} color="#ffffff" />
-              <span>Reminders</span>
-            </div>
-          </div>
-
-          {upcomingReminders.length === 0 ? (
-            <div style={{ fontSize: '12px', color: '#71717a', padding: '6px 0', textAlign: 'center' }}>
-              No upcoming reminders.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {upcomingReminders.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => completeReminder(r.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '6px 8px',
-                    borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease',
-                  }}
-                >
-                  <Circle size={15} color="#71717a" style={{ flexShrink: 0 }} />
-                  <span
-                    style={{
-                      flex: 1,
-                      fontSize: '12px',
-                      color: '#ffffff',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {r.title}
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
-                    {r.datetime.slice(5).replace('T', ' ')}
-                  </span>
+              {percent !== undefined && (
+                <div className="progress-bar-track">
+                  <div className="progress-bar-fill" style={{ width: `${percent}%`, ...(over && OVER_STYLE) }} />
                 </div>
-              ))}
+              )}
+              <div className="metric-foot">
+                <div className="tile-steps">
+                  {STEPS[metric.type]?.map(([amount, label]) => (
+                    <button key={amount} className="tile-step" onClick={() => logMetric(metric.id, amount)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <span className="metric-period" style={over ? { color: 'var(--accent-danger)' } : undefined}>
+                  {over ? 'over' : period}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+          ))}
+        </section>
+
+        {upcoming.length > 0 && (
+          <section>
+            <div className="tray-section-title">Reminders</div>
+            {upcoming.map((r) => (
+              <div key={r.id} className="tray-reminder">
+                <button
+                  className="reminder-check"
+                  onClick={() => completeReminder(r.id)}
+                  title="Mark done"
+                  aria-label={`Mark ${r.title} done`}
+                />
+                <span className="tray-reminder-title">{r.title}</span>
+                <span className="item-sub" style={{ marginTop: 0, color: r.datetime <= now ? '#f87171' : undefined }}>
+                  {formatWhen(r.datetime)}
+                </span>
+              </div>
+            ))}
+          </section>
+        )}
       </div>
 
-      {/* Bottom Action Footer */}
-      <div
-        style={{
-          padding: '10px 16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.07)',
-          background: 'rgba(255, 255, 255, 0.02)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <button
-          onClick={handleOpenMain}
-          style={{
-            width: '100%',
-            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            color: '#ffffff',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
-            e.currentTarget.style.background = 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
-            e.currentTarget.style.background = 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)';
-          }}
-        >
-          <span>Open MeTric</span>
-          <Maximize2 size={13} style={{ opacity: 0.8 }} />
+      <footer className="tray-footer">
+        <button className="tray-open" onClick={() => window.electronAPI?.quitApp?.()}>
+          <Power size={13} /> Quit MeTric
         </button>
-      </div>
+        <button className="tray-open" onClick={() => window.electronAPI?.openMainWindow?.()}>
+          Open MeTric <ArrowUpRight size={13} />
+        </button>
+      </footer>
     </div>
   );
 };

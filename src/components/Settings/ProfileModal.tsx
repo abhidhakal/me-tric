@@ -82,7 +82,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
             </div>
           </div>
 
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', margin: 0 }}>
             Goals and metrics are managed in Plan.
           </p>
 

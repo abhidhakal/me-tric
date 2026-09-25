@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Target, Trash2, Calendar, CheckCircle2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatShortDate } from '../../utils/dateUtils';
 import { useTracker } from '../../context/TrackerContext';
 import { calculateGoalProgress, computeGoalCascade } from '../../utils/aggregation';
 import { GoalModal } from './GoalModal';
@@ -9,6 +10,7 @@ export const GoalsSection: React.FC = () => {
   const { goals, metrics, database, saveGoal, deleteGoal, settings } = useTracker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const entries = database?.entries || [];
 
@@ -16,226 +18,112 @@ export const GoalsSection: React.FC = () => {
     const metric = metrics.find((m) => m.id === g.metricId);
     const progress = calculateGoalProgress(g, metric, entries, settings.currencySymbol);
     const cascade = metric ? computeGoalCascade(g, metric, entries, settings.currencySymbol) : [];
-    return {
-      goal: g,
-      metric,
-      progress,
-      cascade,
-    };
+    return { goal: g, metric, progress, cascade };
   });
+
+  const openEditor = (goal: Goal | null) => {
+    setEditingGoal(goal);
+    setIsModalOpen(true);
+  };
 
   return (
     <>
-      <div className="card-panel">
+      <div className="section-block">
         <div className="panel-header">
-          <span className="panel-title">
-            <Target size={15} style={{ color: 'var(--text-secondary)' }} />
-            Goals ({goals.length})
-          </span>
-          <button className="btn-primary" onClick={() => { setEditingGoal(null); setIsModalOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', padding: '6px 12px' }}>
-            <Plus size={14} strokeWidth={2.5} />
-            <span>New Goal</span>
+          <span className="panel-title">Goals</span>
+          <button className="btn-secondary" onClick={() => openEditor(null)} style={{ fontSize: 'var(--fs-caption)', padding: '5px 10px' }}>
+            <Plus size={13} strokeWidth={2.5} />
+            <span>New</span>
           </button>
         </div>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-6px 0 14px' }}>
-          Outcomes you're working toward. Each one breaks down into this month, this week and today automatically.
-        </p>
 
         {goalItems.length === 0 ? (
-          <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No goals created yet. Click "New Goal" to add one.
-          </div>
+          <p className="empty-note">No goals yet.</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-            {goalItems.map(({ goal, metric, progress, cascade }) => (
-              <div
-                key={goal.id}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.025)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '14px',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <div>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
-                        {goal.title}
-                      </h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          Linked metric:
-                        </span>
-                        <span
-                          style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            background: 'rgba(255,255,255,0.06)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            color: '#ffffff',
-                          }}
-                        >
-                          {metric?.name || 'Unknown'}
-                        </span>
+          <div className="item-list">
+            {goalItems.map(({ goal, metric, progress, cascade }) => {
+              const isExpanded = expandedId === goal.id;
+              const canExpand = Boolean(goal.note) || (cascade.length > 0 && !progress.isCompleted && !progress.isOver);
+              return (
+                <div key={goal.id} className="item-card">
+                  <div
+                    className="item-head"
+                    onClick={() => canExpand && setExpandedId(isExpanded ? null : goal.id)}
+                    style={{ cursor: canExpand ? 'pointer' : 'default' }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div className="item-title">{goal.title}</div>
+                      <div className="item-sub">
+                        {metric?.name || 'Unknown metric'} · by {formatShortDate(goal.endDate)}
+                        {progress.isOver && <span style={{ color: 'var(--accent-danger)' }}> · Over budget</span>}
+                        {progress.isCompleted && <span style={{ color: '#ffffff' }}> · Done</span>}
                       </div>
                     </div>
 
-                    {progress.isOver && (
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          background: 'rgba(239, 68, 68, 0.15)',
-                          color: '#f87171',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                        }}
-                      >
-                        Over budget
-                      </span>
-                    )}
-                    {progress.isCompleted && (
-                      <span
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          background: '#ffffff',
-                          color: '#000000',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                        }}
-                      >
-                        <CheckCircle2 size={12} />
-                        Completed
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="icon-btn" onClick={() => openEditor(goal)} title="Edit goal" style={{ color: 'var(--text-muted)' }}>
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          className="icon-btn"
+                          onClick={() => window.confirm(`Delete goal "${goal.title}"?`) && deleteGoal(goal.id)}
+                          title="Delete goal"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div className="item-value">
+                        {progress.formattedCurrent} <small>/ {progress.formattedTarget}</small>
+                      </div>
+                      {canExpand && (
+                        <span style={{ color: 'var(--text-muted)', display: 'flex' }}>
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {goal.note && (
+                  <div className="progress-bar-track" style={{ marginTop: 10 }}>
                     <div
+                      className="progress-bar-fill"
                       style={{
-                        marginTop: 12,
-                        padding: '8px 12px',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        borderRadius: '6px',
-                        borderLeft: '2px solid var(--border-subtle)',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.45,
-                        fontStyle: 'italic',
+                        width: `${progress.progressPercent}%`,
+                        background: progress.isOver ? 'linear-gradient(90deg, #dc2626, #f87171)' : undefined,
                       }}
-                    >
-                      "{goal.note}"
-                    </div>
-                  )}
+                    />
+                  </div>
 
-                  <div style={{ marginTop: 20 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 700 }}>
-                        Progress
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-                        {progress.formattedCurrent} / {progress.formattedTarget}
-                      </span>
-                    </div>
-
-                    <div className="progress-bar-track" style={{ height: 8, marginTop: 8 }}>
-                      <div
-                        className="progress-bar-fill"
-                        style={{
-                          width: `${progress.progressPercent}%`,
-                          background: progress.isOver
-                            ? 'linear-gradient(90deg, #dc2626, #f87171)'
-                            : 'linear-gradient(90deg, #71717a, #ffffff)',
-                        }}
-                      />
-                    </div>
-
-                    {cascade.length > 0 && !progress.isCompleted && !progress.isOver && (
-                      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {cascade.map((level) => (
+                  {isExpanded && (
+                    <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {goal.note && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{goal.note}</p>}
+                      {!progress.isCompleted &&
+                        !progress.isOver &&
+                        cascade.map((level) => (
                           <div key={level.period}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-caption)' }}>
                               <span style={{ color: 'var(--text-muted)' }}>{level.label}</span>
-                              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                              <span style={{  color: 'var(--text-secondary)' }}>
                                 {level.formattedCurrent} / {level.formattedTarget}
                               </span>
                             </div>
                             <div className="progress-bar-track" style={{ height: 3, marginTop: 4 }}>
-                              <div className="progress-bar-fill" style={{ width: `${level.progressPercent}%`, background: level.isOver ? '#f87171' : '#a1a1aa' }} />
+                              <div className="progress-bar-fill" style={{ width: `${level.progressPercent}%` }} />
                             </div>
                           </div>
                         ))}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginTop: 20,
-                    paddingTop: 12,
-                    borderTop: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    <Calendar size={13} />
-                    <span>Deadline: {goal.endDate}</span>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    className="icon-btn"
-                    onClick={() => {
-                      setEditingGoal(goal);
-                      setIsModalOpen(true);
-                    }}
-                    title="Edit goal"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={() => {
-                      if (window.confirm(`Delete goal "${goal.title}"?`)) {
-                        deleteGoal(goal.id);
-                      }
-                    }}
-                    title="Delete goal"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <GoalModal
-          isOpen
-          metrics={metrics}
-          goalToEdit={editingGoal}
-          onClose={() => setIsModalOpen(false)}
-          onSave={saveGoal}
-        />
+        <GoalModal isOpen metrics={metrics} goalToEdit={editingGoal} onClose={() => setIsModalOpen(false)} onSave={saveGoal} />
       )}
     </>
   );

@@ -238,7 +238,7 @@ export const OnboardingScreen: React.FC = () => {
     <div className="onboarding-screen">
       {/* Top Bar (38px Native macOS Height) */}
       <div className="onboarding-topbar">
-        <div style={{ fontSize: '0.88rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
+        <div style={{ fontSize: 'var(--fs-item)', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
           MeTric
         </div>
 
@@ -285,7 +285,7 @@ export const OnboardingScreen: React.FC = () => {
 
               <div className="onboarding-card-box">
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Your Name</label>
+                  <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Your Name</label>
                   <input
                     type="text"
                     className="form-input"
@@ -293,24 +293,24 @@ export const OnboardingScreen: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoFocus
-                    style={{ padding: '12px 14px', fontSize: '0.95rem' }}
+                    style={{ padding: '12px 14px', fontSize: 'var(--fs-item)' }}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Role / Occupation (Optional)</label>
+                  <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Role / Occupation (Optional)</label>
                   <input
                     type="text"
                     className="form-input"
                     placeholder="e.g. Founder, Developer, Student"
                     value={occupation}
                     onChange={(e) => setOccupation(e.target.value)}
-                    style={{ padding: '12px 14px', fontSize: '0.95rem' }}
+                    style={{ padding: '12px 14px', fontSize: 'var(--fs-item)' }}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Currency</label>
+                  <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Currency</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                     {['Rs.', '$', '€', '£'].map((curr) => (
                       <button
@@ -319,7 +319,7 @@ export const OnboardingScreen: React.FC = () => {
                         className="chip-btn"
                         style={{
                           padding: '10px 0',
-                          fontSize: '0.88rem',
+                          fontSize: 'var(--fs-item)',
                           background: currency === curr ? '#ffffff' : 'rgba(255,255,255,0.03)',
                           color: currency === curr ? '#000000' : 'var(--text-secondary)',
                           borderColor: currency === curr ? '#ffffff' : 'var(--border-subtle)',
@@ -365,7 +365,7 @@ export const OnboardingScreen: React.FC = () => {
               <div className="onboarding-card-box">
                 <form onSubmit={handleAddGoal} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Goal Name</label>
+                    <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Goal Name</label>
                     <input
                       type="text"
                       className="form-input"
@@ -373,13 +373,13 @@ export const OnboardingScreen: React.FC = () => {
                       value={goalTitle}
                       onChange={(e) => setGoalTitle(e.target.value)}
                       autoFocus
-                      style={{ padding: '11px 14px', fontSize: '0.94rem', width: '100%' }}
+                      style={{ padding: '11px 14px', fontSize: 'var(--fs-item)', width: '100%' }}
                     />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                     <div className="form-group" style={{ minWidth: 0 }}>
-                      <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Target</label>
+                      <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Target</label>
                       <input
                         type="number"
                         step="any"
@@ -387,29 +387,29 @@ export const OnboardingScreen: React.FC = () => {
                         placeholder="150"
                         value={goalTarget}
                         onChange={(e) => setGoalTarget(e.target.value)}
-                        style={{ padding: '10px 12px', fontSize: '0.92rem', width: '100%' }}
+                        style={{ padding: '10px 12px', fontSize: 'var(--fs-item)', width: '100%' }}
                       />
                     </div>
 
                     <div className="form-group" style={{ minWidth: 0 }}>
-                      <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Unit</label>
+                      <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Unit</label>
                       <input
                         type="text"
                         className="form-input"
                         placeholder="sessions"
                         value={goalUnit}
                         onChange={(e) => setGoalUnit(e.target.value)}
-                        style={{ padding: '10px 12px', fontSize: '0.92rem', width: '100%' }}
+                        style={{ padding: '10px 12px', fontSize: 'var(--fs-item)', width: '100%' }}
                       />
                     </div>
 
                     <div className="form-group" style={{ minWidth: 0 }}>
-                      <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cadence</label>
+                      <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Cadence</label>
                       <select
                         className="form-select"
                         value={goalPeriod}
                         onChange={(e) => setGoalPeriod(e.target.value as TargetPeriod)}
-                        style={{ padding: '10px 12px', fontSize: '0.92rem', width: '100%' }}
+                        style={{ padding: '10px 32px 10px 12px', fontSize: 'var(--fs-item)', width: '100%' }}
                       >
                         <option value="year">Yearly</option>
                         <option value="month">Monthly</option>
@@ -419,14 +419,14 @@ export const OnboardingScreen: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Notes & Strategy (Optional)</label>
+                    <label className="form-label" style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>Notes & Strategy (Optional)</label>
                     <input
                       type="text"
                       className="form-input"
                       placeholder="e.g. Focus on consistency 3x a week"
                       value={goalNote}
                       onChange={(e) => setGoalNote(e.target.value)}
-                      style={{ padding: '11px 14px', fontSize: '0.92rem', width: '100%' }}
+                      style={{ padding: '11px 14px', fontSize: 'var(--fs-item)', width: '100%' }}
                     />
                   </div>
 
@@ -456,7 +456,7 @@ export const OnboardingScreen: React.FC = () => {
               {/* Goals List */}
               {userGoals.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--text-muted)', marginTop: 4 }}>
                     Added Goals ({userGoals.length})
                   </div>
                   {userGoals.map((ug) => (
@@ -475,11 +475,11 @@ export const OnboardingScreen: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Target size={16} style={{ color: '#ffffff', flexShrink: 0 }} />
                         <div>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff' }}>
+                          <div style={{ fontSize: 'var(--fs-item)', fontWeight: 700, color: '#ffffff' }}>
                             {ug.title} · <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{ug.targetValue} {ug.unit} / {ug.period}</span>
                           </div>
                           {ug.note && (
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 3, fontStyle: 'italic' }}>
+                            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)', marginTop: 3, fontStyle: 'italic' }}>
                               "{ug.note}"
                             </div>
                           )}
@@ -550,12 +550,12 @@ export const OnboardingScreen: React.FC = () => {
                           <div className="check-checkbox">
                             {isSelected && <Check size={12} strokeWidth={3} />}
                           </div>
-                          <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#ffffff' }}>
+                          <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: '#ffffff' }}>
                             {m.name}
                           </span>
                         </div>
 
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
                           {m.type}
                         </span>
                       </div>
@@ -605,7 +605,7 @@ export const OnboardingScreen: React.FC = () => {
                     type="button"
                     className="btn-secondary"
                     onClick={() => handleComplete(true)}
-                    style={{ padding: '9px 16px', fontSize: '0.86rem' }}
+                    style={{ padding: '9px 16px', fontSize: 'var(--fs-body)' }}
                   >
                     Skip for Now
                   </button>
@@ -613,7 +613,7 @@ export const OnboardingScreen: React.FC = () => {
                     type="button"
                     className="btn-primary"
                     onClick={() => handleComplete(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', fontSize: '0.86rem' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', fontSize: 'var(--fs-body)' }}
                   >
                     <span>Start Tracking</span>
                     <span className="btn-enter-badge" title="Press Enter to start tracking">

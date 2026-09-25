@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Clock,
   Code2,
   Palette,
   FileText,
@@ -8,18 +7,12 @@ import {
   Compass,
   Film,
   Layers,
-  FolderGit2,
   Pause,
   Play,
-  ShieldCheck,
-  Zap,
-  Coffee,
-  CheckCircle2,
-  ExternalLink,
 } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { ActivityCategory } from '../../types';
-import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
+import { getTodayIso } from '../../utils/dateUtils';
 import { DateNavigator } from '../Common/DateNavigator';
 
 function formatDuration(seconds: number): string {
@@ -52,19 +45,19 @@ const CATEGORY_META: Record<
   writing: {
     label: 'Writing & Planning',
     icon: <FileText size={14} />,
-    color: '#d4d4d8',
+    color: 'var(--text-secondary)',
     isDeepWork: true,
   },
   communication: {
     label: 'Communication',
     icon: <MessageSquare size={14} />,
-    color: '#a1a1aa',
+    color: 'var(--text-muted)',
     isDeepWork: false,
   },
   research: {
     label: 'Research & Browsing',
     icon: <Compass size={14} />,
-    color: '#71717a',
+    color: 'var(--text-muted)',
     isDeepWork: false,
   },
   entertainment: {
@@ -87,16 +80,12 @@ export const ActivityView: React.FC = () => {
     activitySummary,
     activityStatus,
     toggleActivityTracking,
-    openDataFolder,
   } = useTracker();
 
   const today = getTodayIso();
   const isViewingToday = activeDate === today;
 
   const totalActive = activitySummary?.totalActiveSeconds || 0;
-  const deepWork = activitySummary?.deepWorkSeconds || 0;
-  const totalIdle = activitySummary?.totalIdleSeconds || 0;
-  const focusRatio = totalActive > 0 ? Math.round((deepWork / totalActive) * 100) : 0;
 
   const topProjects = activitySummary?.topProjects || [];
   const topApps = activitySummary?.topApps || [];
@@ -119,18 +108,13 @@ export const ActivityView: React.FC = () => {
     .filter((c) => c.seconds > 0)
     .sort((a, b) => b.seconds - a.seconds);
 
-  const topProject = topProjects[0]?.project || 'None';
-
   return (
     <div className="view-container">
       {/* Top Header */}
       <div className="view-header">
         <div className="view-title-row" style={{ flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 className="view-title">Activity & Screen Time</h2>
-            <p className="view-subtitle">
-              {formatDateHeader(activeDate)} · Automatic Work & Project Categorization
-            </p>
+            <h2 className="view-title">Activity</h2>
           </div>
 
           {/* Live Status Pill & Tracking Toggle & Date Navigator */}
@@ -147,7 +131,7 @@ export const ActivityView: React.FC = () => {
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 20,
                   padding: '5px 12px',
-                  fontSize: '0.78rem',
+                  fontSize: 'var(--fs-caption)',
                 }}
               >
                 <div
@@ -161,13 +145,7 @@ export const ActivityView: React.FC = () => {
                   }}
                 />
                 <span style={{ color: '#ffffff', fontWeight: 500 }}>
-                  {!isTracking
-                    ? 'Tracking Paused'
-                    : isIdle
-                    ? 'Away from desk (Idle)'
-                    : currentApp
-                    ? `Active: ${currentApp}`
-                    : 'Monitoring active work'}
+                  {!isTracking ? 'Paused' : isIdle ? 'Idle' : currentApp || 'Tracking'}
                 </span>
                 {isTracking && !isIdle && currentCategory && (
                   <span
@@ -175,7 +153,7 @@ export const ActivityView: React.FC = () => {
                       background: 'rgba(255, 255, 255, 0.08)',
                       padding: '2px 7px',
                       borderRadius: 4,
-                      fontSize: '0.7rem',
+                      fontSize: 'var(--fs-caption)',
                       color: 'var(--text-secondary)',
                       textTransform: 'capitalize',
                     }}
@@ -195,14 +173,14 @@ export const ActivityView: React.FC = () => {
                 alignItems: 'center',
                 gap: 6,
                 padding: '6px 12px',
-                fontSize: '0.78rem',
+                fontSize: 'var(--fs-caption)',
                 color: isTracking ? 'var(--text-secondary)' : '#ffffff',
                 borderColor: !isTracking ? '#ffffff' : 'var(--border-subtle)',
               }}
               title={isTracking ? 'Pause automatic tracking' : 'Resume automatic tracking'}
             >
               {isTracking ? <Pause size={12} /> : <Play size={12} />}
-              <span>{isTracking ? 'Pause Tracking' : 'Resume Tracking'}</span>
+              <span>{isTracking ? 'Pause' : 'Resume'}</span>
             </button>
           </div>
         </div>
@@ -212,43 +190,12 @@ export const ActivityView: React.FC = () => {
       <div className="card-panel" style={{ marginBottom: 20 }}>
         <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="panel-title">Hourly Activity Bar Chart</span>
-              <span
-                style={{
-                  fontSize: '0.74rem',
-                  background: 'rgba(59, 130, 246, 0.15)',
-                  color: '#60a5fa',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  borderRadius: 4,
-                  padding: '1px 7px',
-                  fontWeight: 600,
-                }}
-              >
-                Minutes Active / Hour
-              </span>
-            </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Shows your active keyboard and computer usage for each hour of the day
-            </p>
+            <span className="panel-title">By hour</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 100%)',
-                  display: 'inline-block',
-                }}
-              />
-              <span style={{ color: 'var(--text-secondary)' }}>Active Screen Time</span>
-            </div>
-            <span style={{ color: 'var(--border-medium)' }}>|</span>
-            <span style={{ color: '#ffffff', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-              Total: {formatDuration(totalActive)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 'var(--fs-body)' }}>
+            <span style={{ color: '#ffffff', fontWeight: 600 }}>
+              {formatDuration(totalActive)}
             </span>
           </div>
         </div>
@@ -261,9 +208,8 @@ export const ActivityView: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              fontSize: '0.7rem',
+              fontSize: 'var(--fs-caption)',
               color: 'var(--text-muted)',
-              fontFamily: 'var(--font-mono)',
               paddingBottom: 24,
               textAlign: 'right',
               width: 32,
@@ -347,16 +293,13 @@ export const ActivityView: React.FC = () => {
                       }}
                     />
 
-                    {/* Active Blue Bar */}
+                    {/* Active bar: current hour bright, the rest muted, as on Progress */}
                     <div
                       style={{
                         width: '100%',
                         height: sec > 0 ? `${Math.max(heightPercent, 4)}%` : '0%',
-                        background: isCurrent
-                          ? 'linear-gradient(180deg, #93c5fd 0%, #3b82f6 100%)'
-                          : 'linear-gradient(180deg, #60a5fa 0%, #2563eb 100%)',
+                        background: isCurrent ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
                         borderRadius: '3px 3px 0 0',
-                        boxShadow: sec > 0 ? '0 0 10px rgba(59, 130, 246, 0.35)' : 'none',
                         transition: 'height 0.25s ease',
                         position: 'relative',
                         zIndex: 3,
@@ -400,9 +343,8 @@ export const ActivityView: React.FC = () => {
                     key={hour}
                     style={{
                       textAlign: 'center',
-                      fontSize: '0.66rem',
-                      fontFamily: 'var(--font-mono)',
-                      color: isCurrent ? '#60a5fa' : 'var(--text-muted)',
+                      fontSize: 'var(--fs-caption)',
+                      color: isCurrent ? '#ffffff' : 'var(--text-muted)',
                       fontWeight: isCurrent ? 700 : 500,
                     }}
                   >
@@ -418,10 +360,7 @@ export const ActivityView: React.FC = () => {
       {/* Work Category Breakdown Panel */}
       <div className="card-panel" style={{ marginBottom: 20 }}>
         <div className="panel-header">
-          <span className="panel-title">Work Category Breakdown</span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Categorized by active application & context
-          </span>
+          <span className="panel-title">Categories</span>
         </div>
 
         {sortedCategories.length > 0 ? (
@@ -434,7 +373,7 @@ export const ActivityView: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     marginBottom: 5,
-                    fontSize: '0.86rem',
+                    fontSize: 'var(--fs-body)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -443,7 +382,7 @@ export const ActivityView: React.FC = () => {
                     {item.meta.isDeepWork && (
                       <span
                         style={{
-                          fontSize: '0.68rem',
+                          fontSize: 'var(--fs-caption)',
                           background: 'rgba(255, 255, 255, 0.08)',
                           border: '1px solid var(--border-subtle)',
                           padding: '1px 6px',
@@ -456,10 +395,10 @@ export const ActivityView: React.FC = () => {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 600, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ fontWeight: 600, color: '#ffffff' }}>
                       {formatDuration(item.seconds)}
                     </span>
-                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', width: 32, textAlign: 'right' }}>
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', width: 32, textAlign: 'right' }}>
                       {item.percent}%
                     </span>
                   </div>
@@ -478,8 +417,8 @@ export const ActivityView: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            No activity recorded yet for this date. Keep MeTric running to automatically record screen time.
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
+            No activity recorded.
           </p>
         )}
       </div>
@@ -489,13 +428,7 @@ export const ActivityView: React.FC = () => {
         {/* Left: Top Projects */}
         <div className="card-panel" style={{ margin: 0 }}>
           <div className="panel-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FolderGit2 size={15} style={{ color: '#ffffff' }} />
-              <span className="panel-title">Projects</span>
-            </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Detected from IDEs & repos
-            </span>
+            <span className="panel-title">Projects</span>
           </div>
 
           {topProjects.length > 0 ? (
@@ -512,7 +445,7 @@ export const ActivityView: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.72rem',
+                        fontSize: 'var(--fs-caption)',
                         fontWeight: 700,
                         color: '#ffffff',
                       }}
@@ -520,7 +453,7 @@ export const ActivityView: React.FC = () => {
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="highlight-title" style={{ fontSize: '0.88rem' }}>
+                      <div className="highlight-title" style={{ fontSize: 'var(--fs-item)' }}>
                         {p.project}
                       </div>
                     </div>
@@ -528,10 +461,9 @@ export const ActivityView: React.FC = () => {
 
                   <span
                     style={{
-                      fontSize: '0.82rem',
+                      fontSize: 'var(--fs-body)',
                       fontWeight: 600,
                       color: 'var(--text-secondary)',
-                      fontFamily: 'var(--font-mono)',
                     }}
                   >
                     {formatDuration(p.durationSeconds)}
@@ -540,8 +472,8 @@ export const ActivityView: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0' }}>
-              No specific project names detected yet. Work in VS Code, Cursor, or Terminal to attribute time to projects.
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', margin: '4px 0' }}>
+              No projects detected.
             </p>
           )}
         </div>
@@ -549,13 +481,7 @@ export const ActivityView: React.FC = () => {
         {/* Right: Top Applications */}
         <div className="card-panel" style={{ margin: 0 }}>
           <div className="panel-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Zap size={15} style={{ color: '#ffffff' }} />
-              <span className="panel-title">Top Applications</span>
-            </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {topApps.length} apps logged
-            </span>
+            <span className="panel-title">Apps</span>
           </div>
 
           {topApps.length > 0 ? (
@@ -574,7 +500,7 @@ export const ActivityView: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.72rem',
+                          fontSize: 'var(--fs-caption)',
                           fontWeight: 700,
                           color: '#ffffff',
                         }}
@@ -582,10 +508,10 @@ export const ActivityView: React.FC = () => {
                         {idx + 1}
                       </span>
                       <div>
-                        <div className="highlight-title" style={{ fontSize: '0.88rem' }}>
+                        <div className="highlight-title" style={{ fontSize: 'var(--fs-item)' }}>
                           {appItem.appName}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                           {appItem.category}
                         </div>
                       </div>
@@ -594,15 +520,14 @@ export const ActivityView: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span
                         style={{
-                          fontSize: '0.82rem',
+                          fontSize: 'var(--fs-body)',
                           fontWeight: 600,
                           color: '#ffffff',
-                          fontFamily: 'var(--font-mono)',
                         }}
                       >
                         {formatDuration(appItem.durationSeconds)}
                       </span>
-                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', width: 28, textAlign: 'right' }}>
+                      <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', width: 28, textAlign: 'right' }}>
                         {appPercent}%
                       </span>
                     </div>
@@ -611,46 +536,13 @@ export const ActivityView: React.FC = () => {
               })}
             </div>
           ) : (
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0' }}>
-              No applications logged yet today.
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', margin: '4px 0' }}>
+              No apps recorded.
             </p>
           )}
         </div>
       </div>
 
-      {/* Privacy & Permissions Card */}
-      <div
-        className="card-panel"
-        style={{
-          background: 'rgba(255, 255, 255, 0.02)',
-          borderColor: 'var(--border-subtle)',
-          padding: '16px 20px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ShieldCheck size={18} style={{ color: '#ffffff' }} />
-            <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
-                100% Local &amp; Private to Your Mac
-              </div>
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                All screen time logs and window titles are processed on-device and stored locally in your Application Support folder. Never transmitted to the cloud.
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="chip-btn"
-            onClick={() => openDataFolder()}
-            style={{ fontSize: '0.76rem', padding: '5px 10px', color: 'var(--text-secondary)' }}
-          >
-            <span>View Storage Folder</span>
-            <ExternalLink size={11} style={{ marginLeft: 4 }} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

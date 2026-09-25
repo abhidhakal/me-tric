@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart2,
   TrendingUp,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  Calendar,
   Target,
   Flame,
   RotateCcw,
@@ -105,7 +103,6 @@ export const DashboardView: React.FC = () => {
         <div className="view-title-row" style={{ flexWrap: 'wrap', gap: 14 }}>
           <div>
             <h2 className="view-title">Progress</h2>
-            <p className="view-subtitle">How you're doing over the week, month, quarter or year</p>
           </div>
 
           {/* Timeframe Tabs */}
@@ -119,7 +116,7 @@ export const DashboardView: React.FC = () => {
                   color: period === p ? '#000000' : 'var(--text-secondary)',
                   borderColor: period === p ? '#ffffff' : 'transparent',
                   fontWeight: period === p ? 700 : 500,
-                  fontSize: '0.78rem',
+                  fontSize: 'var(--fs-caption)',
                   padding: '5px 12px',
                   textTransform: 'capitalize',
                   transition: 'all 0.12s ease',
@@ -196,11 +193,10 @@ export const DashboardView: React.FC = () => {
 
             <span
               style={{
-                fontSize: '0.82rem',
+                fontSize: 'var(--fs-body)',
                 fontWeight: 600,
                 color: '#ffffff',
                 marginLeft: 4,
-                fontFamily: 'var(--font-mono)',
               }}
             >
               {dateRangeLabel}
@@ -220,7 +216,7 @@ export const DashboardView: React.FC = () => {
                 borderRadius: 5,
                 padding: '3px 9px',
                 color: '#ffffff',
-                fontSize: '0.72rem',
+                fontSize: 'var(--fs-caption)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.12s ease',
@@ -228,7 +224,7 @@ export const DashboardView: React.FC = () => {
               title="Return to current active period"
             >
               <RotateCcw size={11} />
-              <span>Jump to Current</span>
+              <span>Current</span>
             </button>
           )}
         </div>
@@ -246,28 +242,28 @@ export const DashboardView: React.FC = () => {
         >
           {/* 1. Consistency / Active Days */}
           <div className="card-panel" style={{ padding: '12px 14px', margin: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 'var(--fs-caption)', fontWeight: 600, marginBottom: 4 }}>
               <Flame size={13} style={{ color: '#fbbf24' }} />
               <span>Active Days</span>
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-              {summaryStats.activeDays} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>/ {summaryStats.totalDays} days</span>
+            <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff' }}>
+              {summaryStats.activeDays} <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', fontWeight: 500 }}>/ {summaryStats.totalDays} days</span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)', marginTop: 2 }}>
               {summaryStats.totalEntries} {summaryStats.totalEntries === 1 ? 'entry' : 'entries'} logged
             </div>
           </div>
 
           {/* 2. Targets On Track */}
           <div className="card-panel" style={{ padding: '12px 14px', margin: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 'var(--fs-caption)', fontWeight: 600, marginBottom: 4 }}>
               <Target size={13} style={{ color: '#34d399' }} />
               <span>Goals On Track</span>
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-              {summaryStats.onTrackCount} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>/ {summaryStats.totalTrackedMetrics} targets</span>
+            <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff' }}>
+              {summaryStats.onTrackCount} <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', fontWeight: 500 }}>/ {summaryStats.totalTrackedMetrics} targets</span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: summaryStats.onTrackCount >= summaryStats.totalTrackedMetrics ? '#34d399' : 'var(--text-secondary)', marginTop: 2 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', color: summaryStats.onTrackCount >= summaryStats.totalTrackedMetrics ? '#34d399' : 'var(--text-secondary)', marginTop: 2 }}>
               {summaryStats.totalTrackedMetrics > 0
                 ? `${Math.round((summaryStats.onTrackCount / summaryStats.totalTrackedMetrics) * 100)}% pacing on track`
                 : 'No targets defined'}
@@ -276,46 +272,24 @@ export const DashboardView: React.FC = () => {
 
           {/* 3. Overall Progress */}
           <div className="card-panel" style={{ padding: '12px 14px', margin: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 'var(--fs-caption)', fontWeight: 600, marginBottom: 4 }}>
               <TrendingUp size={13} style={{ color: '#60a5fa' }} />
               <span>Target Completion</span>
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: 'var(--fs-num-lg)', fontWeight: 700, color: '#ffffff' }}>
               {summaryStats.completionRate}%
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-              Average across all metrics
             </div>
           </div>
 
-          {/* 4. Timeframe Mode */}
-          <div className="card-panel" style={{ padding: '12px 14px', margin: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginBottom: 4 }}>
-              <Calendar size={13} style={{ color: 'var(--text-secondary)' }} />
-              <span>Timeframe Window</span>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', textTransform: 'capitalize' }}>
-              {period}
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-              Targets automatically adjusted
-            </div>
-          </div>
         </div>
       )}
 
       {/* ── Categories Grouping ── */}
       {categories.length > 0 ? (
         categories.map((cat) => (
-          <div key={cat.category} className="card-panel" style={{ marginBottom: 16 }}>
+          <div key={cat.category} className="section-block">
             <div className="panel-header">
-              <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <TrendingUp size={15} style={{ color: 'var(--text-secondary)' }} />
-                <span>{cat.category}</span>
-              </span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {cat.metrics.length} {cat.metrics.length === 1 ? 'metric' : 'metrics'}
-              </span>
+              <span className="panel-title">{cat.category}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -352,18 +326,13 @@ export const DashboardView: React.FC = () => {
                     >
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.96rem', color: '#ffffff' }}>
+                          <span style={{ fontWeight: 700, fontSize: 'var(--fs-item)', color: '#ffffff' }}>
                             {rollup.metric.name}
                           </span>
-                          {rollup.metric.unit && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                              ({rollup.metric.unit})
-                            </span>
-                          )}
                           {rollup.paceMessage && (
                             <span
                               style={{
-                                fontSize: '0.66rem',
+                                fontSize: 'var(--fs-caption)',
                                 fontWeight: 600,
                                 padding: '1px 6px',
                                 borderRadius: 4,
@@ -391,27 +360,22 @@ export const DashboardView: React.FC = () => {
                           )}
                         </div>
 
-                        {rollup.formattedTarget && (
-                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 3 }}>
-                            Target for this {period}: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{rollup.formattedTarget}</span>
-                          </div>
-                        )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-mono)' }}>
+                          <div style={{ fontSize: 'var(--fs-num)', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
                             {rollup.formattedValue}
                             {rollup.formattedTarget && (
-                              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                              <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', fontWeight: 500 }}>
                                 {' '}/ {rollup.formattedTarget}
                               </span>
                             )}
                           </div>
 
                           {rollup.progressPercent !== undefined && (
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: barColor(rollup) === 'good' ? '#34d399' : barColor(rollup) === 'over' ? '#f87171' : '#ffffff', marginTop: 2 }}>
-                              {rollup.progressPercent}% {rollup.metric.lowerIsBetter ? 'of budget used' : 'achieved'}
+                            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: barColor(rollup) === 'good' ? '#34d399' : barColor(rollup) === 'over' ? '#f87171' : '#ffffff', marginTop: 2 }}>
+                              {rollup.progressPercent}%{rollup.metric.lowerIsBetter ? ' of budget' : ''}
                             </div>
                           )}
                         </div>
@@ -442,7 +406,7 @@ export const DashboardView: React.FC = () => {
                     )}
 
                     {/* Dynamic Trend Breakdown Chart */}
-                    {isExpanded && <TrendBars rollup={rollup} period={period} />}
+                    {isExpanded && <TrendBars rollup={rollup} />}
                   </div>
                 );
               })}
@@ -450,13 +414,7 @@ export const DashboardView: React.FC = () => {
           </div>
         ))
       ) : (
-        <div className="card-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <BarChart2 size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 10px auto' }} />
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>No metrics tracked yet</h3>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Configure metrics in the Metrics tab or complete onboarding to populate your dashboard.
-          </p>
-        </div>
+        <p className="empty-note">No metrics yet.</p>
       )}
     </div>
   );

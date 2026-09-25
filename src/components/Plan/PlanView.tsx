@@ -8,7 +8,6 @@ export const PlanView: React.FC = () => (
       <div className="view-title-row">
         <div>
           <h2 className="view-title">Plan</h2>
-          <p className="view-subtitle">What you're aiming for, and what you track to get there</p>
         </div>
       </div>
     </div>

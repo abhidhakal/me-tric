@@ -81,8 +81,10 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 | <kbd>⌘</kbd> + <kbd>1</kbd> | Switch to **Today** view |
 | <kbd>⌘</kbd> + <kbd>2</kbd> | Switch to **Plan** (goals & metrics) |
 | <kbd>⌘</kbd> + <kbd>3</kbd> | Switch to **Progress** |
-| <kbd>⌘</kbd> + <kbd>4</kbd> | Switch to **Reviews** view |
-| <kbd>⌘</kbd> + <kbd>5</kbd> | Switch to **Screen Time** |
+| <kbd>⌘</kbd> + <kbd>4</kbd> | Switch to **Activity** |
+| <kbd>⌘</kbd> + <kbd>5</kbd> | Switch to **Reviews** view |
+| <kbd>⌘</kbd> + <kbd>\</kbd> | Collapse / expand the sidebar |
+| <kbd>⌘</kbd> + <kbd>,</kbd> | Settings |
 | <kbd>Enter ↵</kbd> | Confirm / Log across dialogs & inputs |
 | <kbd>Esc</kbd> | Dismiss modals / Skip secondary steps |
 

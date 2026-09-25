@@ -3,11 +3,10 @@ import { MetricRollup, TrendBucket } from '../../types';
 
 interface TrendBarsProps {
   rollup: MetricRollup;
-  period?: 'week' | 'month' | 'quarter' | 'year';
 }
 
-export const TrendBars: React.FC<TrendBarsProps> = ({ rollup, period = 'week' }) => {
-  const { trendBuckets, dailyValues, metric } = rollup;
+export const TrendBars: React.FC<TrendBarsProps> = ({ rollup }) => {
+  const { trendBuckets, dailyValues } = rollup;
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Use trendBuckets if available, otherwise adapt dailyValues
@@ -23,72 +22,8 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup, period = 'week' })
 
   const maxValue = Math.max(...buckets.map((b) => b.value), 1);
 
-  const getPeriodBreakdownTitle = () => {
-    switch (period) {
-      case 'week':
-        return 'Daily Trend (Mon – Sun)';
-      case 'month':
-        return 'Weekly Milestones';
-      case 'quarter':
-        return 'Monthly Breakdown';
-      case 'year':
-        return 'Monthly Pace Across Year';
-      default:
-        return 'Trend Breakdown';
-    }
-  };
-
   return (
-    <div
-      style={{
-        marginTop: 14,
-        padding: '14px 16px',
-        background: 'rgba(0, 0, 0, 0.35)',
-        border: '1px solid rgba(255, 255, 255, 0.06)',
-        borderRadius: '10px',
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-            {getPeriodBreakdownTitle()}
-          </span>
-          {rollup.paceMessage && (
-            <span
-              style={{
-                fontSize: '0.68rem',
-                fontWeight: 600,
-                padding: '2px 7px',
-                borderRadius: 4,
-                background: rollup.paceStatus === 'ahead'
-                  ? 'rgba(52, 211, 153, 0.12)'
-                  : rollup.paceStatus === 'on_track'
-                  ? 'rgba(255, 255, 255, 0.08)'
-                  : 'rgba(248, 113, 113, 0.12)',
-                color: rollup.paceStatus === 'ahead'
-                  ? '#34d399'
-                  : rollup.paceStatus === 'on_track'
-                  ? '#ffffff'
-                  : '#f87171',
-                border: `1px solid ${
-                  rollup.paceStatus === 'ahead'
-                    ? 'rgba(52, 211, 153, 0.25)'
-                    : rollup.paceStatus === 'on_track'
-                    ? 'rgba(255, 255, 255, 0.15)'
-                    : 'rgba(248, 113, 113, 0.25)'
-                }`,
-              }}
-            >
-              {rollup.paceMessage}
-            </span>
-          )}
-        </div>
-        <span style={{ fontSize: '0.76rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-          Period Total: <strong style={{ color: '#ffffff' }}>{rollup.formattedValue}</strong>
-        </span>
-      </div>
-
+    <div style={{ marginTop: 14 }}>
       {/* Vertical Columns Bar Chart */}
       <div
         style={{
@@ -133,8 +68,7 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup, period = 'week' })
                     boxShadow: '0 8px 20px rgba(0,0,0,0.8)',
                     borderRadius: 5,
                     padding: '3px 7px',
-                    fontSize: '0.68rem',
-                    fontFamily: 'var(--font-mono)',
+                    fontSize: 'var(--fs-caption)',
                     color: '#ffffff',
                     whiteSpace: 'nowrap',
                     zIndex: 20,
@@ -143,7 +77,7 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup, period = 'week' })
                   }}
                 >
                   <div style={{ fontWeight: 700 }}>{b.label}</div>
-                  {b.subLabel && <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>{b.subLabel}</div>}
+                  {b.subLabel && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)' }}>{b.subLabel}</div>}
                   <div style={{ color: '#ffffff', marginTop: 1 }}>{b.value > 0 ? b.formattedValue : '0'}</div>
                 </div>
               )}
@@ -189,7 +123,6 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup, period = 'week' })
               fontSize: buckets.length > 8 ? '0.62rem' : '0.68rem',
               color: b.isCurrent ? '#ffffff' : hoveredIndex === idx ? '#ffffff' : 'var(--text-muted)',
               fontWeight: b.isCurrent ? 700 : 500,
-              fontFamily: 'var(--font-mono)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

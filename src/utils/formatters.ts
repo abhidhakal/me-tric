@@ -29,7 +29,10 @@ export function formatCurrency(amount: number, symbol: string = 'Rs.'): string {
  */
 export function formatNumber(num: number, unit?: string): string {
   const formatted = new Intl.NumberFormat('en-US').format(num);
-  return unit ? `${formatted} ${unit}` : formatted;
+  if (!unit) return formatted;
+  // "1 items" -> "1 item"; units are stored plural.
+  const label = num === 1 && /[^s]s$/.test(unit) ? unit.slice(0, -1) : unit;
+  return `${formatted} ${label}`;
 }
 
 /**

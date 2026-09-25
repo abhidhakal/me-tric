@@ -15,7 +15,7 @@ export const AppLayout: React.FC = () => {
 
   // Keyboard shortcuts Cmd+1 to Cmd+5 to switch tabs
   useEffect(() => {
-    const tabs: ActiveTab[] = ['today', 'plan', 'progress', 'reviews', 'activity'];
+    const tabs: ActiveTab[] = ['today', 'plan', 'progress', 'activity', 'reviews'];
     const handleKey = (e: KeyboardEvent) => {
       const tab = tabs[Number(e.key) - 1];
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && tab) {

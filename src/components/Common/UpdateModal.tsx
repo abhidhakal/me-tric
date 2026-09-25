@@ -73,8 +73,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         setStatus('up-to-date');
         setUpdateInfo({
           hasUpdate: false,
-          currentVersion: '1.0.3',
-          latestVersion: '1.0.3',
+          currentVersion: __APP_VERSION__,
+          latestVersion: __APP_VERSION__,
           releaseName: 'MeTric Web Preview',
           releaseNotes: 'You are viewing the web preview of MeTric.',
           releaseDate: new Date().toISOString(),
@@ -168,8 +168,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </div>
             <div>
               <h3 className="modal-title">Software Update</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Current Version: v{updateInfo?.currentVersion || '1.0.6'}
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)' }}>
+                Current Version: v{updateInfo?.currentVersion || __APP_VERSION__}
               </span>
             </div>
           </div>
@@ -192,10 +192,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   animation: 'spin 1s linear infinite',
                 }}
               />
-              <h4 style={{ fontSize: '0.98rem', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
+              <h4 style={{ fontSize: 'var(--fs-dialog)', fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
                 Checking for updates...
               </h4>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
                 Connecting to GitHub Releases to check latest builds
               </p>
             </div>
@@ -219,11 +219,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               >
                 <CheckCircle2 size={22} />
               </div>
-              <h4 style={{ fontSize: '1.02rem', fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
+              <h4 style={{ fontSize: 'var(--fs-dialog)', fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
                 MeTric is Up to Date
               </h4>
-              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: 360, margin: '0 auto' }}>
-                You are running the latest version <strong style={{ color: '#ffffff' }}>v{updateInfo?.currentVersion || '1.0.10'}</strong>. No updates needed.
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', maxWidth: 360, margin: '0 auto' }}>
+                You are running the latest version <strong style={{ color: '#ffffff' }}>v{updateInfo?.currentVersion || __APP_VERSION__}</strong>. No updates needed.
               </p>
             </div>
           )}
@@ -242,15 +242,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
+                      <h4 style={{ fontSize: 'var(--fs-dialog)', fontWeight: 700, color: '#ffffff' }}>
                         MeTric v{updateInfo.latestVersion}
                       </h4>
                       <span
                         style={{
-                          fontSize: '0.68rem',
+                          fontSize: 'var(--fs-caption)',
                           fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
                           padding: '2px 7px',
                           borderRadius: '4px',
                           background: 'rgba(34, 197, 94, 0.15)',
@@ -262,7 +260,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', marginTop: 4 }}>
                       {updateInfo.assetName} · {formatBytes(updateInfo.assetSize)}
                     </div>
                   </div>
@@ -272,7 +270,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      fontSize: '0.78rem',
+                      fontSize: 'var(--fs-caption)',
                       color: 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -290,10 +288,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 <div style={{ marginTop: 14 }}>
                   <div
                     style={{
-                      fontSize: '0.72rem',
+                      fontSize: 'var(--fs-caption)',
                       fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
                       color: 'var(--text-muted)',
                       marginBottom: 6,
                     }}
@@ -304,7 +300,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     style={{
                       maxHeight: 160,
                       overflowY: 'auto',
-                      fontSize: '0.82rem',
+                      fontSize: 'var(--fs-body)',
                       color: 'var(--text-secondary)',
                       lineHeight: 1.55,
                       background: 'rgba(0, 0, 0, 0.25)',
@@ -324,10 +320,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           {status === 'downloading' && (
             <div style={{ padding: '10px 4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
+                <span style={{ fontSize: 'var(--fs-item)', fontWeight: 600, color: '#ffffff' }}>
                   Downloading Update...
                 </span>
-                <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: 'var(--fs-item)', fontWeight: 700, color: '#ffffff' }}>
                   {progress.percent}%
                 </span>
               </div>
@@ -361,7 +357,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   marginTop: 8,
-                  fontSize: '0.78rem',
+                  fontSize: 'var(--fs-caption)',
                   color: 'var(--text-muted)',
                 }}
               >
@@ -391,10 +387,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               >
                 <Sparkles size={24} />
               </div>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginBottom: 8, letterSpacing: '-0.01em' }}>
+              <h4 style={{ fontSize: 'var(--fs-dialog)', fontWeight: 700, color: '#ffffff', marginBottom: 8, letterSpacing: '-0.01em' }}>
                 Update Ready to Install
               </h4>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 16px', lineHeight: 1.55 }}>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 16px', lineHeight: 1.55 }}>
                 MeTric v{updateInfo?.latestVersion || ''} has been downloaded and verified. Restart now to apply the update immediately, or choose to install later.
               </p>
               <div
@@ -407,7 +403,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   background: 'rgba(34, 197, 94, 0.1)',
                   border: '1px solid rgba(34, 197, 94, 0.25)',
                   color: '#4ade80',
-                  fontSize: '0.78rem',
+                  fontSize: 'var(--fs-caption)',
                   fontWeight: 600,
                 }}
               >
@@ -435,10 +431,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               >
                 <AlertCircle size={22} />
               </div>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
+              <h4 style={{ fontSize: 'var(--fs-dialog)', fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
                 Update Check Failed
               </h4>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', maxWidth: 360, margin: '0 auto 16px' }}>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', maxWidth: 360, margin: '0 auto 16px' }}>
                 {errorMessage}
               </p>
             </div>
@@ -469,7 +465,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  fontSize: '0.82rem',
+                  fontSize: 'var(--fs-body)',
                   padding: '0 14px',
                   borderRadius: '8px',
                   whiteSpace: 'nowrap',
@@ -482,7 +478,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             )}
 
             {status === 'ready' && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)' }}>
                 v{updateInfo?.latestVersion || ''} Downloaded
               </span>
             )}
@@ -496,7 +492,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   height: 36,
                   padding: '0 16px',
                   borderRadius: '8px',
-                  fontSize: '0.84rem',
+                  fontSize: 'var(--fs-body)',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}
@@ -517,7 +513,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   height: 36,
                   padding: '0 16px',
                   borderRadius: '8px',
-                  fontSize: '0.84rem',
+                  fontSize: 'var(--fs-body)',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}
@@ -535,7 +531,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   height: 36,
                   padding: '0 20px',
                   borderRadius: '8px',
-                  fontSize: '0.84rem',
+                  fontSize: 'var(--fs-body)',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}
@@ -554,7 +550,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     height: 36,
                     padding: '0 16px',
                     borderRadius: '8px',
-                    fontSize: '0.84rem',
+                    fontSize: 'var(--fs-body)',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
@@ -569,7 +565,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     height: 36,
                     padding: '0 18px',
                     borderRadius: '8px',
-                    fontSize: '0.84rem',
+                    fontSize: 'var(--fs-body)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
@@ -597,7 +593,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   height: 36,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  fontSize: '0.84rem',
+                  fontSize: 'var(--fs-body)',
                   padding: '0 16px',
                   borderRadius: '8px',
                   whiteSpace: 'nowrap',
@@ -618,7 +614,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     height: 36,
                     padding: '0 16px',
                     borderRadius: '8px',
-                    fontSize: '0.84rem',
+                    fontSize: 'var(--fs-body)',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
@@ -633,7 +629,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     height: 36,
                     padding: '0 18px',
                     borderRadius: '8px',
-                    fontSize: '0.84rem',
+                    fontSize: 'var(--fs-body)',
                     fontWeight: 600,
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -659,7 +655,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                   height: 36,
                   padding: '0 18px',
                   borderRadius: '8px',
-                  fontSize: '0.84rem',
+                  fontSize: 'var(--fs-body)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,

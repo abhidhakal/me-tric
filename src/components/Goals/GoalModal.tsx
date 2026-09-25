@@ -95,7 +95,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">{goalToEdit ? 'Edit Goal' : 'Create Goal'}</h3>
+          <h3 className="modal-title">{goalToEdit ? 'Edit Goal' : 'New Goal'}</h3>
           <button className="icon-btn" onClick={onClose}>
             <X size={18} />
           </button>
@@ -103,7 +103,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="form-group">
-            <label className="form-label">Goal Title</label>
+            <label className="form-label">Title</label>
             <input
               type="text"
               className="form-input"
@@ -116,7 +116,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Linked Metric</label>
+            <label className="form-label">Metric</label>
             <select
               className="form-select"
               value={metricId}
@@ -130,7 +130,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               ))}
             </select>
             {conflict && (
-              <p style={{ fontSize: '0.78rem', color: '#f87171', margin: '6px 0 0' }}>
+              <p style={{ fontSize: 'var(--fs-caption)', color: '#f87171', margin: '6px 0 0' }}>
                 This metric already has the goal "{conflict.title}" for these dates. Pick another metric or change the dates.
               </p>
             )}
@@ -138,7 +138,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Target Quantity</label>
+              <label className="form-label">Target</label>
               <input
                 type="number"
                 step="any"
@@ -151,7 +151,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Cadence / Period</label>
+              <label className="form-label">Period</label>
               <select
                 className="form-select"
                 value={period}
@@ -166,7 +166,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Start Date</label>
+              <label className="form-label">Start</label>
               <input
                 type="date"
                 className="form-input"
@@ -177,7 +177,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">End Date (Deadline)</label>
+              <label className="form-label">End</label>
               <input
                 type="date"
                 className="form-input"
@@ -189,17 +189,17 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           </div>
 
           {target > 0 && preview.length > 0 && (
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              Breaks down to about {preview.join(' · ')}. Targets adjust automatically if you fall behind or get ahead.
+            <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)', margin: 0 }}>
+              ≈ {preview.join(' · ')}
             </p>
           )}
 
           <div className="form-group">
-            <label className="form-label">Notes & Explanation (Optional)</label>
+            <label className="form-label">Note (optional)</label>
             <textarea
               className="form-input"
               rows={3}
-              placeholder="e.g. Target strategy, personal context, or why this milestone matters..."
+              placeholder="Why it matters"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={{ resize: 'vertical', fontFamily: 'inherit' }}
@@ -217,7 +217,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               style={{ display: 'flex', alignItems: 'center', gap: 7, opacity: conflict ? 0.5 : 1 }}
             >
               <Check size={15} />
-              <span>Save Goal</span>
+              <span>{goalToEdit ? 'Save' : 'Create'}</span>
               <span className="btn-enter-badge" title="Press Enter to save">
                 <CornerDownLeft size={11} strokeWidth={2.5} />
               </span>

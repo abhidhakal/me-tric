@@ -43,6 +43,16 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
+
+  /* Type scale: five text styles plus two number sizes. Use these, not ad-hoc sizes. */
+  --fs-title: 1.625rem;   /* 26px  page title, Today greeting */
+  --fs-dialog: 1.0625rem; /* 17px  dialog title */
+  --fs-section: 0.875rem; /* 14px  section title ("Metrics", "Goals") */
+  --fs-item: 0.875rem;    /* 14px  item title (goal, reminder, metric name in a list) */
+  --fs-body: 0.8125rem;   /* 13px  body, detail, controls */
+  --fs-caption: 0.75rem;  /* 12px  dates, hints, "today", badges */
+  --fs-num-lg: 1.25rem;   /* 20px  headline numbers (Today tiles, stats) */
+  --fs-num: 1.0625rem;    /* 17px  numbers in list rows */
 }
 
 * {
@@ -55,6 +65,8 @@
 
 body {
   font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums; /* digits line up without a monospace face */
   background-color: var(--bg-app);
   color: var(--text-primary);
   min-height: 100vh;
@@ -63,19 +75,12 @@ body {
 }
 
 /* Scrollbars */
+/* Scrollbars: hidden; scrolling still works */
+* {
+  scrollbar-width: none;
+}
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  display: none;
 }
 
 /* App Frame */
@@ -89,8 +94,9 @@ body {
 
 /* Sidebar */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 232px;
+  min-width: 232px;
+  transition: width 0.18s ease, min-width 0.18s ease;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -106,13 +112,51 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  padding: 0 14px 0 96px; /* 96px leaves generous breathing room from macOS traffic lights */
+  justify-content: space-between;
+  padding: 0 10px 0 96px; /* 96px leaves generous breathing room from macOS traffic lights */
   -webkit-app-region: drag;
 }
 
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+/* Collapsed: icons only. The top strip stays for the traffic lights and window dragging. */
+.sidebar.is-collapsed {
+  width: 92px; /* wide enough to clear the macOS traffic lights */
+  min-width: 92px;
+}
+
+.sidebar.is-collapsed .sidebar-topbar {
+  padding: 0;
+  border-bottom-color: transparent;
+}
+
+.sidebar.is-collapsed .nav-item,
+.sidebar.is-collapsed .profile-row {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .sidebar-topbar .brand-title {
-  font-size: 0.88rem;
-  font-weight: 800;
+  font-size: var(--fs-item);
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: #ffffff;
   -webkit-app-region: no-drag;
@@ -130,59 +174,84 @@ body {
 .sidebar input,
 .sidebar a,
 .sidebar nav,
-.sidebar .sidebar-user-pill {
+.sidebar .profile-row {
   -webkit-app-region: no-drag;
 }
 
-/* User Profile Pill in Sidebar */
-.sidebar-user-pill {
+/* Profile row at the bottom of the sidebar */
+.profile-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.12s ease;
 }
 
-.sidebar-user-pill:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--border-medium);
+.profile-row:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.user-avatar-circle {
+.profile-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #27272a, #3f3f46);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 800;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  flex-shrink: 0;
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.user-pill-name {
-  font-size: 0.84rem;
-  font-weight: 700;
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: var(--fs-body);
+  font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.user-pill-role {
-  font-size: 0.7rem;
+.profile-role {
+  font-size: var(--fs-caption);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.update-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.sidebar.is-collapsed .nav-item {
+  position: relative;
+}
+
+.sidebar.is-collapsed .update-dot {
+  position: absolute;
+  top: 6px;
+  right: 16px;
 }
 
 /* Navigation Links */
@@ -197,16 +266,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   background: transparent;
   border: none;
   font-family: inherit;
-  font-size: 0.86rem;
-  font-weight: 600;
+  font-size: var(--fs-body);
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
   text-align: left;
 }
 
@@ -217,23 +286,27 @@ body {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.07);
   color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  font-weight: 600;
 }
 
+/* Shortcut hints stay out of sight until the item is hovered. */
 .nav-shortcut {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  font-size: var(--fs-caption);
   color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.nav-item:hover .nav-shortcut {
+  opacity: 0.7;
 }
 
 .sidebar-footer {
@@ -274,7 +347,7 @@ body {
 
 .kbd-badge {
   font-family: var(--font-mono);
-  font-size: 0.64rem;
+  font-size: var(--fs-caption);
   padding: 1px 4px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
@@ -327,16 +400,17 @@ body {
 }
 
 .view-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   color: #ffffff;
 }
 
 .view-subtitle {
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
   color: var(--text-secondary);
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 /* Cards & Panels */
@@ -358,47 +432,57 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 14px;
 }
 
 .panel-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-section);
+  font-weight: 600;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+/* Flat section: a heading and its content, no box. Use instead of .card-panel
+   when the content is already cards or rows, so cards never sit inside cards. */
+.section-block {
+  margin-bottom: 28px;
+}
+
+.section-block > .panel-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+.empty-note {
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+}
+
 /* Metric Grid in Today View */
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
   margin-bottom: 20px;
 }
 
+/* Today tiles: quiet by default; the number is the only thing that stands out. */
 .metric-card {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.018);
   border: 1px solid var(--border-subtle);
-  box-shadow: var(--card-inset-glow);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 120px;
-  transition: all 0.15s ease;
+  gap: 6px;
+  transition: border-color 0.15s ease;
 }
 
 .metric-card:hover {
-  border-color: var(--border-medium);
-  background: var(--bg-card-hover);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .metric-top {
@@ -408,23 +492,83 @@ body {
 }
 
 .metric-name {
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--fs-body);
+  font-weight: 500;
   color: var(--text-secondary);
+}
+
+.metric-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  cursor: pointer;
+  min-width: 0;
 }
 
 .metric-value-huge {
-  font-size: 1.65rem;
-  font-weight: 800;
+  font-size: var(--fs-num-lg);
+  font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.02em;
-  margin-top: 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.metric-target-sub {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 3px;
+.metric-target {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.metric-period {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.metric-card .progress-bar-track {
+  height: 3px;
+  margin: 2px 0 0;
+}
+
+.metric-card .progress-bar-fill {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* Quick-add: plain text until hovered, so a grid of tiles doesn't read as a wall of buttons. */
+.tile-steps {
+  display: flex;
+  gap: 2px;
+  margin-left: -6px;
+}
+
+.tile-step {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.tile-step:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 /* Highlights & Timeline */
@@ -458,20 +602,209 @@ body {
 
 .highlight-bullet {
   color: #ffffff;
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: var(--fs-dialog);
 }
 
 .highlight-title {
-  font-size: 0.9rem;
+  font-size: var(--fs-item);
   font-weight: 600;
   color: #ffffff;
 }
 
 .highlight-desc {
-  font-size: 0.78rem;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+/* One item per card, as on Progress: a single header line and an optional bar. */
+.item-card {
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px 18px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.item-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.item-title {
+  font-size: var(--fs-item);
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.item-sub {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.item-value {
+  font-size: var(--fs-num);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.item-value small {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Edit/delete stay quiet until the item is hovered. */
+.item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.item-card:hover .item-actions,
+.item-card:focus-within .item-actions,
+.list-row:hover .item-actions,
+.list-row:focus-within .item-actions {
+  opacity: 1;
+}
+
+/* A single card holding divided rows (e.g. the metric list). */
+.list-card {
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+}
+
+.list-row + .list-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Borderless input living inside a list row */
+.inline-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: var(--fs-item);
+  padding: 2px 0;
+}
+
+.inline-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Reviews reflection: label over a borderless text area, one row per prompt. */
+.reflection-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  cursor: text;
+}
+
+.reflection-input {
+  resize: none;
+  line-height: 1.5;
+  font-size: var(--fs-item);
+}
+
+/* Reminder composer: date/time/repeat row under the name, inset to line up with the text. */
+.reminder-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 14px 43px;
+}
+
+.reminder-controls .form-input,
+.reminder-controls .form-select {
+  width: auto;
+  padding: 7px 10px;
+  font-size: var(--fs-body);
+}
+
+.reminder-controls select.form-select {
+  padding-right: 30px;
+  background-position: right 10px center;
+}
+
+.reminder-composer + .list-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.reminder-check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.reminder-check:hover {
+  border-color: #ffffff;
+}
+
+.reminder-check.is-done {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* Inside a card, list items are plain divided rows, not boxes within the box. */
+.card-panel .highlight-list {
+  gap: 0;
+}
+
+.card-panel .highlight-item {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+  padding: 10px 2px;
+}
+
+.card-panel .highlight-item:first-child {
+  border-top: none;
+}
+
+.card-panel .highlight-item:hover {
+  background: transparent;
+  border-color: var(--border-subtle);
 }
 
 /* Progress Bar (Monochrome Silver/White Gradient) */
@@ -505,7 +838,7 @@ body {
   padding: 5px 10px;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: var(--fs-caption);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -525,10 +858,8 @@ body {
 }
 
 .form-label {
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-body);
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
@@ -539,7 +870,7 @@ body {
   padding: 10px 12px;
   color: #ffffff;
   font-family: inherit;
-  font-size: 0.92rem;
+  font-size: var(--fs-item);
   outline: none;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
@@ -547,6 +878,18 @@ body {
 .form-input:focus, .form-textarea:focus, .form-select:focus {
   border-color: #ffffff;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+/* Own chevron with room to breathe; the native one sits flush against the border. */
+select.form-select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+  cursor: pointer;
 }
 
 input[type="time"]::-webkit-calendar-picker-indicator {
@@ -567,7 +910,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-radius: var(--radius-md);
   padding: 8px 16px;
   font-family: inherit;
-  font-size: 0.84rem;
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -611,7 +954,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-radius: var(--radius-md);
   padding: 8px 16px;
   font-family: inherit;
-  font-size: 0.84rem;
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
@@ -682,10 +1025,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .modal-title {
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-size: var(--fs-dialog);
+  font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .quick-selector-grid {
@@ -704,7 +1047,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   padding: 10px 12px;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: var(--fs-item);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -738,8 +1081,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .trend-day-label {
   width: 36px;
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
 }
 
@@ -761,8 +1103,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .trend-value-label {
   width: 60px;
   text-align: right;
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: var(--fs-caption);
   color: var(--text-secondary);
 }
 
@@ -784,7 +1125,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-radius: var(--radius-md);
   padding: 10px 16px;
   color: #ffffff;
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -841,10 +1182,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .onboarding-logo-pill {
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-caption);
+  font-weight: 700;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.08);
   padding: 1px 6px;
@@ -862,7 +1201,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.74rem;
+  font-size: var(--fs-caption);
   font-weight: 700;
   color: var(--text-muted);
   transition: color 0.15s ease;
@@ -873,8 +1212,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .onboarding-step-num {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: var(--fs-caption);
   padding: 1px 5px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
@@ -917,7 +1255,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .onboarding-hero-title {
   font-family: var(--font-display);
-  font-size: 3.2rem;
+  font-size: 2.5rem;
   font-weight: 400;
   letter-spacing: -0.015em;
   color: #ffffff;
@@ -932,7 +1270,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .onboarding-hero-subtitle {
-  font-size: 0.95rem;
+  font-size: var(--fs-item);
   color: var(--text-secondary);
   margin-top: 10px;
   line-height: 1.5;
@@ -1010,4 +1348,153 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   margin-top: 10px;
   padding-top: 20px;
   border-top: 1px solid var(--border-subtle);
+}
+
+/* Menu bar popover: a compact Today in the same styles as the main window. */
+.tray {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(9, 9, 12, 0.96);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.tray-header,
+.tray-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.tray-date {
+  font-size: var(--fs-item);
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tray-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.tray-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tray-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.tray-dot.is-on {
+  background: #22c55e;
+}
+
+.tray-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tray-section-title {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.tray-metric {
+  padding: 8px 0;
+}
+
+.tray-metric + .tray-metric {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tray-metric-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tray-metric-name {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tray-metric-value {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tray-metric .progress-bar-track {
+  height: 3px;
+  margin: 6px 0 2px;
+}
+
+.tray-metric .progress-bar-fill {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.tray-reminder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.tray-reminder-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tray-footer {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tray-open {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tray-open:hover {
+  color: #ffffff;
 }

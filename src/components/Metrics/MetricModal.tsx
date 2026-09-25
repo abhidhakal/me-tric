@@ -75,13 +75,11 @@ export const MetricModal: React.FC<MetricModalProps> = ({
     onClose();
   };
 
-  const colorPresets = ['#ffffff', '#e4e4e7', '#a1a1aa', '#71717a', '#52525b', '#3f3f46', '#27272a'];
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">{metricToEdit ? 'Edit Metric' : 'Create Custom Metric'}</h3>
+          <h3 className="modal-title">{metricToEdit ? 'Edit Metric' : 'New Metric'}</h3>
           <button className="icon-btn" onClick={onClose}>
             <X size={18} />
           </button>
@@ -89,7 +87,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="form-group">
-            <label className="form-label">Metric Name</label>
+            <label className="form-label">Name</label>
             <input
               type="text"
               className="form-input"
@@ -134,7 +132,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
           </div>
 
           {type !== 'boolean' && type !== 'rating' && (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: '0.84rem' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 'var(--fs-body)' }}>
               <input
                 type="checkbox"
                 checked={lowerIsBetter}
@@ -143,21 +141,21 @@ export const MetricModal: React.FC<MetricModalProps> = ({
               />
               <span>
                 <span style={{ color: '#ffffff', fontWeight: 600 }}>Lower is better</span>
-                <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                  Treat the target as a budget or limit, like money spent or screen time. Staying under it counts as success.
+                <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: 'var(--fs-caption)' }}>
+                  For budgets and limits, like money spent.
                 </span>
               </span>
             </label>
           )}
 
           {goalTitle ? (
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-              Target comes from the goal "{goalTitle}". Edit or delete the goal to change it.
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', margin: 0 }}>
+              Target set by goal "{goalTitle}".
             </p>
           ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Target Value (Optional)</label>
+              <label className="form-label">Target (optional)</label>
               <input
                 type="number"
                 step="any"
@@ -169,7 +167,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Target Cadence</label>
+              <label className="form-label">Per</label>
               <select
                 className="form-select"
                 value={targetPeriod}
@@ -187,7 +185,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
           )}
 
           <div className="form-group">
-            <label className="form-label">Unit Label (Optional)</label>
+            <label className="form-label">Unit (optional)</label>
             <input
               type="text"
               className="form-input"
@@ -197,34 +195,13 @@ export const MetricModal: React.FC<MetricModalProps> = ({
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Monochrome Shade Indicator</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              {colorPresets.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: c,
-                    border: color === c ? '2px solid #ffffff' : '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Check size={16} />
-              <span>{metricToEdit ? 'Save Changes' : 'Create Metric'}</span>
+              <span>{metricToEdit ? 'Save' : 'Create'}</span>
             </button>
           </div>
         </form>
