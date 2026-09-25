@@ -46,13 +46,14 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 - Generates a clean chronological timeline of wins and completed tasks for every date.
 - Automatically rolls into weekly and monthly review summaries.
 
-### Intelligent Pacing Breakdown Engine
-- Set a high-level target (e.g., *12 books/year*, *250 deep work hours/year*).
-- MeTric automatically opens a multi-choice pacing breakdown modal:
-  - **Monthly Milestone** (`total / 12`)
-  - **Weekly Pacing** (`total / 52`)
-  - **Daily Habit** (`total / 365`)
-- Fine-tune targets inline and confirm with <kbd>Enter</kbd> to generate balanced sub-goals across every cadence.
+### Cascading Goals
+- Set an outcome goal on a metric (e.g., *earn 1 crore this year*, *250 deep work hours this year*).
+- MeTric breaks it down live into **this month**, **this week**, and **today**: what's left of the goal, spread over the time left.
+- Fall behind and the next targets rise; get ahead and they ease off. No stale sub-goals to maintain.
+- Metrics without a goal keep their own standalone targets (e.g., *exercise 3 hours a week*).
+
+### Reminders
+- Name, date and time, optional repeat (daily, weekly, monthly, yearly), and a per-reminder notification toggle.
 
 ### Tactical Metrics & Steppers
 - Track durations, numbers, currencies, and boolean habits (*Deep Work*, *Exercise*, *Reading*, *Savings*, *Sleep*).
@@ -78,10 +79,10 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 | Shortcut | Action |
 | :--- | :--- |
 | <kbd>⌘</kbd> + <kbd>1</kbd> | Switch to **Today** view |
-| <kbd>⌘</kbd> + <kbd>2</kbd> | Switch to **Dashboard** |
-| <kbd>⌘</kbd> + <kbd>3</kbd> | Switch to **Metrics** view |
-| <kbd>⌘</kbd> + <kbd>4</kbd> | Switch to **Goals** view |
-| <kbd>⌘</kbd> + <kbd>5</kbd> | Switch to **Reviews** view |
+| <kbd>⌘</kbd> + <kbd>2</kbd> | Switch to **Plan** (goals & metrics) |
+| <kbd>⌘</kbd> + <kbd>3</kbd> | Switch to **Progress** |
+| <kbd>⌘</kbd> + <kbd>4</kbd> | Switch to **Reviews** view |
+| <kbd>⌘</kbd> + <kbd>5</kbd> | Switch to **Screen Time** |
 | <kbd>Enter ↵</kbd> | Confirm / Log across dialogs & inputs |
 | <kbd>Esc</kbd> | Dismiss modals / Skip secondary steps |
 
