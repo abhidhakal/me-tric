@@ -38,9 +38,6 @@ interface TrackerContextType {
 
   // Profile & Onboarding
   profile: UserProfile | null;
-  isOnboardingOpen: boolean;
-  openOnboarding: () => void;
-  closeOnboarding: () => void;
   saveProfile: (profile: Partial<UserProfile>) => Promise<void>;
   completeOnboarding: (data: { profile: Partial<UserProfile>; enabledMetricIds: string[]; goals?: Goal[] }) => Promise<void>;
 
@@ -93,7 +90,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
   const [database, setDatabase] = useState<AppDatabase | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -128,14 +124,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
     setPreselectedMetricId(undefined);
   }, []);
 
-  const openOnboarding = useCallback(() => {
-    setIsOnboardingOpen(true);
-  }, []);
-
-  const closeOnboarding = useCallback(() => {
-    setIsOnboardingOpen(false);
-  }, []);
-
   const refreshData = useCallback(async () => {
     try {
       await localApi.init();
@@ -148,11 +136,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
       setMetrics([...db.metrics]);
       setGoals([...db.goals]);
       setSettings({ ...db.settings });
-
-      // Automatically launch onboarding if user hasn't completed it
-      if (!db.profile || !db.profile.onboardingCompleted) {
-        setIsOnboardingOpen(true);
-      }
 
       const entries = await localApi.getEntriesForDate(activeDate);
       setTodayEntries(entries);
@@ -286,7 +269,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
     goals?: Goal[];
   }) => {
     await localApi.completeOnboarding(data);
-    setIsOnboardingOpen(false);
     showToast('Welcome to your Personal Operating System!', 'success');
     await refreshData();
   };
@@ -312,7 +294,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const resetToBlank = async () => {
     await localApi.resetToBlank();
     showToast('Reset to blank slate', 'info');
-    setIsOnboardingOpen(true);
     await refreshData();
   };
 
@@ -423,9 +404,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         toasts,
         showToast,
         profile,
-        isOnboardingOpen,
-        openOnboarding,
-        closeOnboarding,
         saveProfile,
         completeOnboarding,
         database,

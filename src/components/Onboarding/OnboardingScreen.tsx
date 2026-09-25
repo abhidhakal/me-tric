@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, ArrowRight, ArrowLeft, Plus, Trash2, X, Target, CornerDownLeft } from 'lucide-react';
+import { Check, ArrowLeft, Plus, Trash2, Target, CornerDownLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useTracker } from '../../context/TrackerContext';
 import { MetricType, MetricCategory, TargetPeriod, Goal } from '../../types';
@@ -22,7 +22,6 @@ export const OnboardingScreen: React.FC = () => {
     profile,
     metrics,
     completeOnboarding,
-    closeOnboarding,
     saveMetric
   } = useTracker();
 
@@ -234,7 +233,6 @@ export const OnboardingScreen: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [step, goalTitle, newMetricName, name, occupation, currency, userGoals, enabledMetricIds, metrics]);
 
-  const isExistingProfile = Boolean(profile?.onboardingCompleted);
 
   return (
     <div className="onboarding-screen">
@@ -263,12 +261,6 @@ export const OnboardingScreen: React.FC = () => {
         </div>
 
         <div>
-          {isExistingProfile && (
-            <button className="onboarding-exit-btn" onClick={closeOnboarding}>
-              <X size={12} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-              Close
-            </button>
-          )}
         </div>
       </div>
 

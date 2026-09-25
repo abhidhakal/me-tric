@@ -887,27 +887,6 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-color: #ffffff;
 }
 
-.onboarding-exit-btn {
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  height: 24px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.12s ease;
-}
-
-.onboarding-exit-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
 /* Scrollable Content inside Onboarding */
 .onboarding-body {
   flex: 1;

@@ -11,7 +11,7 @@ import { ToastContainer } from '../Common/ToastContainer';
 import { useTracker, ActiveTab } from '../../context/TrackerContext';
 
 export const AppLayout: React.FC = () => {
-  const { activeTab, setActiveTab, isOnboardingOpen, profile, isLoading } = useTracker();
+  const { activeTab, setActiveTab, profile, isLoading } = useTracker();
 
   // Keyboard shortcuts Cmd+1 to Cmd+5 to switch tabs
   useEffect(() => {
@@ -27,8 +27,8 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [setActiveTab]);
 
-  // Full-screen first-run experience if not completed, or when re-opened
-  if (isOnboardingOpen || (!profile?.onboardingCompleted && !isLoading)) {
+  // Full-screen first-run experience; afterwards profile edits go through the profile modal
+  if (!profile?.onboardingCompleted && !isLoading) {
     return (
       <>
         <OnboardingScreen />

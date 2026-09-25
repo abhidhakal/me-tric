@@ -10,6 +10,7 @@ import {
 import { useTracker, ActiveTab } from '../../context/TrackerContext';
 import { UpdateModal } from '../Common/UpdateModal';
 import { SettingsModal } from '../Settings/SettingsModal';
+import { ProfileModal } from '../Settings/ProfileModal';
 import { UpdateInfo } from '../../types';
 
 export const Sidebar: React.FC = () => {
@@ -17,11 +18,11 @@ export const Sidebar: React.FC = () => {
     activeTab,
     setActiveTab,
     profile,
-    openOnboarding,
   } = useTracker();
 
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [availableUpdate, setAvailableUpdate] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
@@ -56,8 +57,8 @@ export const Sidebar: React.FC = () => {
         {profile && (
           <div
             className="sidebar-user-pill"
-            onClick={() => openOnboarding()}
-            title="Edit profile & goals"
+            onClick={() => setIsProfileOpen(true)}
+            title="Edit profile"
             style={{ marginBottom: 14 }}
           >
             <div className="user-avatar-circle">
@@ -144,6 +145,8 @@ export const Sidebar: React.FC = () => {
           setIsUpdateModalOpen(true);
         }}
       />
+
+      {isProfileOpen && <ProfileModal onClose={() => setIsProfileOpen(false)} />}
 
       <UpdateModal
         isOpen={isUpdateModalOpen}
