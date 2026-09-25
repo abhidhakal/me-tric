@@ -546,7 +546,7 @@ export const TrayPopover: React.FC = () => {
             e.currentTarget.style.background = 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)';
           }}
         >
-          <span>Open Full MeTric Dashboard</span>
+          <span>Open MeTric</span>
           <Maximize2 size={13} style={{ opacity: 0.8 }} />
         </button>
       </div>

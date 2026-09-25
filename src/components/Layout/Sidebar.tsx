@@ -3,7 +3,6 @@ import {
   Calendar,
   Clock,
   BarChart3,
-  Sliders,
   Target,
   BookOpen,
   Settings,
@@ -42,11 +41,9 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; shortcut: string }[] = [
     { id: 'today', label: 'Today', icon: <Calendar size={18} />, shortcut: '⌘1' },
-    { id: 'activity', label: 'Activity', icon: <Clock size={18} />, shortcut: '⌘2' },
-    { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} />, shortcut: '⌘3' },
-    { id: 'metrics', label: 'Metrics', icon: <Sliders size={18} />, shortcut: '⌘4' },
-    { id: 'goals', label: 'Goals', icon: <Target size={18} />, shortcut: '⌘5' },
-    { id: 'reviews', label: 'Reviews', icon: <BookOpen size={18} />, shortcut: '⌘6' },
+    { id: 'plan', label: 'Plan', icon: <Target size={18} />, shortcut: '⌘2' },
+    { id: 'progress', label: 'Progress', icon: <BarChart3 size={18} />, shortcut: '⌘3' },
+    { id: 'reviews', label: 'Reviews', icon: <BookOpen size={18} />, shortcut: '⌘4' },
   ];
 
   return (
@@ -99,6 +96,19 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>
+          {/* Secondary: nice to have, not part of the core plan → log → review loop */}
+          <button
+            className={`nav-item ${activeTab === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveTab('activity')}
+            style={{ width: '100%' }}
+            title="Screen time & app activity"
+          >
+            <div className="nav-item-left">
+              <Clock size={18} />
+              <span>Screen Time</span>
+            </div>
+            <span className="nav-shortcut">⌘5</span>
+          </button>
           <button
             className="nav-item"
             onClick={() => setIsSettingsOpen(true)}

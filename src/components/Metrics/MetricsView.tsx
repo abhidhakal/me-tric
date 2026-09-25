@@ -17,7 +17,7 @@ import { Metric } from '../../types';
 import { MetricModal } from './MetricModal';
 import { getActiveGoal } from '../../utils/aggregation';
 
-export const MetricsView: React.FC = () => {
+export const MetricsSection: React.FC = () => {
   const { metrics, goals, saveMetric, deleteMetric } = useTracker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMetric, setEditingMetric] = useState<Metric | null>(null);
@@ -76,38 +76,21 @@ export const MetricsView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
-      <div className="view-header">
-        <div className="view-title-row">
-          <div>
-            <h2 className="view-title">Metrics</h2>
-            <p className="view-subtitle">Manage habits, targets & trackers</p>
-          </div>
-
-          <button
-            className="btn-primary"
-            onClick={handleCreate}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: '0.82rem',
-              padding: '7px 14px',
-            }}
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            <span>New Metric</span>
-          </button>
-        </div>
-      </div>
-
+    <>
       <div className="card-panel">
         <div className="panel-header">
           <span className="panel-title">
             <Sliders size={15} style={{ color: 'var(--text-secondary)' }} />
-            Configured Metrics ({metrics.length})
+            Metrics ({metrics.length})
           </span>
+          <button className="btn-primary" onClick={handleCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', padding: '6px 12px' }}>
+            <Plus size={14} strokeWidth={2.5} />
+            <span>New Metric</span>
+          </button>
         </div>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-6px 0 14px' }}>
+          Everything you log. A metric linked to a goal takes its target from the goal; others keep their own.
+        </p>
 
         {metrics.length === 0 ? (
           <div
@@ -464,6 +447,6 @@ export const MetricsView: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

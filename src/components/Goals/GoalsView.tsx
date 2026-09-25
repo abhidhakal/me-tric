@@ -5,7 +5,7 @@ import { calculateGoalProgress, computeGoalCascade } from '../../utils/aggregati
 import { GoalModal } from './GoalModal';
 import { Goal } from '../../types';
 
-export const GoalsView: React.FC = () => {
+export const GoalsSection: React.FC = () => {
   const { goals, metrics, database, saveGoal, deleteGoal, settings } = useTracker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -25,32 +25,21 @@ export const GoalsView: React.FC = () => {
   });
 
   return (
-    <div className="view-container">
-      <div className="view-header">
-        <div className="view-title-row">
-          <div>
-            <h2 className="view-title">Goals</h2>
-            <p className="view-subtitle">Active targets & milestones</p>
-          </div>
-
-          <button
-            className="btn-primary"
-            onClick={() => { setEditingGoal(null); setIsModalOpen(true); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '7px 14px' }}
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            <span>New Goal</span>
-          </button>
-        </div>
-      </div>
-
+    <>
       <div className="card-panel">
         <div className="panel-header">
           <span className="panel-title">
             <Target size={15} style={{ color: 'var(--text-secondary)' }} />
             Goals ({goals.length})
           </span>
+          <button className="btn-primary" onClick={() => { setEditingGoal(null); setIsModalOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', padding: '6px 12px' }}>
+            <Plus size={14} strokeWidth={2.5} />
+            <span>New Goal</span>
+          </button>
         </div>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-6px 0 14px' }}>
+          Outcomes you're working toward. Each one breaks down into this month, this week and today automatically.
+        </p>
 
         {goalItems.length === 0 ? (
           <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -232,6 +221,6 @@ export const GoalsView: React.FC = () => {
           onSave={saveGoal}
         />
       )}
-    </div>
+    </>
   );
 };

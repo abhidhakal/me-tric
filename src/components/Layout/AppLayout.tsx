@@ -3,40 +3,24 @@ import { Sidebar } from './Sidebar';
 import { TodayView } from '../Today/TodayView';
 import { ActivityView } from '../Activity/ActivityView';
 import { DashboardView } from '../Dashboard/DashboardView';
-import { MetricsView } from '../Metrics/MetricsView';
-import { GoalsView } from '../Goals/GoalsView';
+import { PlanView } from '../Plan/PlanView';
 import { ReviewsView } from '../Reviews/ReviewsView';
 import { QuickLogModal } from '../QuickLog/QuickLogModal';
 import { OnboardingScreen } from '../Onboarding/OnboardingScreen';
 import { ToastContainer } from '../Common/ToastContainer';
-import { useTracker } from '../../context/TrackerContext';
+import { useTracker, ActiveTab } from '../../context/TrackerContext';
 
 export const AppLayout: React.FC = () => {
   const { activeTab, setActiveTab, isOnboardingOpen, profile, isLoading } = useTracker();
 
-  // Keyboard shortcuts Cmd+1 to Cmd+6 to switch tabs
+  // Keyboard shortcuts Cmd+1 to Cmd+5 to switch tabs
   useEffect(() => {
+    const tabs: ActiveTab[] = ['today', 'plan', 'progress', 'reviews', 'activity'];
     const handleKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
-        if (e.key === '1') {
-          e.preventDefault();
-          setActiveTab('today');
-        } else if (e.key === '2') {
-          e.preventDefault();
-          setActiveTab('activity');
-        } else if (e.key === '3') {
-          e.preventDefault();
-          setActiveTab('dashboard');
-        } else if (e.key === '4') {
-          e.preventDefault();
-          setActiveTab('metrics');
-        } else if (e.key === '5') {
-          e.preventDefault();
-          setActiveTab('goals');
-        } else if (e.key === '6') {
-          e.preventDefault();
-          setActiveTab('reviews');
-        }
+      const tab = tabs[Number(e.key) - 1];
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && tab) {
+        e.preventDefault();
+        setActiveTab(tab);
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -60,11 +44,10 @@ export const AppLayout: React.FC = () => {
       <div className="main-wrapper">
         <main className="content-area">
           {activeTab === 'today' && <TodayView />}
-          {activeTab === 'activity' && <ActivityView />}
-          {activeTab === 'dashboard' && <DashboardView />}
-          {activeTab === 'metrics' && <MetricsView />}
-          {activeTab === 'goals' && <GoalsView />}
+          {activeTab === 'plan' && <PlanView />}
+          {activeTab === 'progress' && <DashboardView />}
           {activeTab === 'reviews' && <ReviewsView />}
+          {activeTab === 'activity' && <ActivityView />}
         </main>
       </div>
 

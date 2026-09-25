@@ -16,7 +16,7 @@ import { localApi } from '../services/localApi';
 import { getTodayIso, nextOccurrence } from '../utils/dateUtils';
 import { sendDesktopNotification } from '../utils/notifications';
 
-export type ActiveTab = 'today' | 'dashboard' | 'activity' | 'metrics' | 'goals' | 'reviews';
+export type ActiveTab = 'today' | 'plan' | 'progress' | 'reviews' | 'activity';
 
 interface ToastState {
   id: string;

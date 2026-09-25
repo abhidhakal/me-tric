@@ -97,8 +97,8 @@ export const DashboardView: React.FC = () => {
       <div className="view-header" style={{ marginBottom: 16 }}>
         <div className="view-title-row" style={{ flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <h2 className="view-title">Dashboard</h2>
-            <p className="view-subtitle">Metrics aggregated and auto-scaled to your chosen timeframe</p>
+            <h2 className="view-title">Progress</h2>
+            <p className="view-subtitle">How you're doing over the week, month, quarter or year</p>
           </div>
 
           {/* Timeframe Tabs */}

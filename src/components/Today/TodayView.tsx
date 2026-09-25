@@ -376,7 +376,7 @@ export const TodayView: React.FC = () => {
             </p>
             <button
               className="btn-primary"
-              onClick={() => setActiveTab('metrics')}
+              onClick={() => setActiveTab('plan')}
               style={{ fontSize: '0.82rem', padding: '8px 16px' }}
             >
               + Configure / Add Metrics
