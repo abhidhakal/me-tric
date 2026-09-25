@@ -24,6 +24,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
   const [targetValue, setTargetValue] = useState<string>('');
   const [targetPeriod, setTargetPeriod] = useState<TargetPeriod>('week');
   const [color, setColor] = useState('#38bdf8');
+  const [lowerIsBetter, setLowerIsBetter] = useState(false);
 
   useEffect(() => {
     if (metricToEdit) {
@@ -34,6 +35,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
       setTargetValue(metricToEdit.targetValue ? String(metricToEdit.targetValue) : '');
       setTargetPeriod(metricToEdit.targetPeriod || 'week');
       setColor(metricToEdit.color || '#38bdf8');
+      setLowerIsBetter(Boolean(metricToEdit.lowerIsBetter));
     } else {
       setName('');
       setType('duration');
@@ -42,6 +44,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
       setTargetValue('25');
       setTargetPeriod('week');
       setColor('#38bdf8');
+      setLowerIsBetter(false);
     }
   }, [metricToEdit, isOpen]);
 
@@ -66,6 +69,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
       unit: unit.trim() || undefined,
       targetValue: targetValue ? parseFloat(targetValue) : undefined,
       targetPeriod: targetValue ? targetPeriod : undefined,
+      lowerIsBetter: lowerIsBetter && type !== 'boolean' && type !== 'rating',
       color,
     });
     onClose();
@@ -128,6 +132,23 @@ export const MetricModal: React.FC<MetricModalProps> = ({
               </select>
             </div>
           </div>
+
+          {type !== 'boolean' && type !== 'rating' && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: '0.84rem' }}>
+              <input
+                type="checkbox"
+                checked={lowerIsBetter}
+                onChange={(e) => setLowerIsBetter(e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              <span>
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Lower is better</span>
+                <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  Treat the target as a budget or limit, like money spent or screen time. Staying under it counts as success.
+                </span>
+              </span>
+            </label>
+          )}
 
           {goalTitle ? (
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>

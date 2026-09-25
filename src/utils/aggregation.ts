@@ -26,6 +26,16 @@ import {
 } from './dateUtils';
 import { formatMetricValue, formatDuration } from './formatters';
 
+/**
+ * How well a rollup met its target, 0–100+ where 100 = success.
+ * For budgets (lowerIsBetter) staying under the limit is 100; overspending scores limit / spent.
+ */
+export function attainmentPercent(r: MetricRollup): number {
+  if (!r.targetValue) return 0;
+  if (!r.metric.lowerIsBetter) return r.progressPercent || 0;
+  return r.totalValue <= r.targetValue ? 100 : Math.round((r.targetValue / r.totalValue) * 100);
+}
+
 export const PERIOD_DAYS: Record<TargetPeriod, number> = {
   day: 1,
   week: 7,
@@ -114,7 +124,22 @@ export function computeMetricRollup(
       const elapsedPercent = elapsedDays / periodDays;
       const expectedProgress = targetValue * elapsedPercent;
 
-      if (totalValue >= expectedProgress * 1.05) {
+      if (metric.lowerIsBetter) {
+        // Budget: spending slower than the elapsed share is good.
+        if (totalValue > targetValue) {
+          paceStatus = 'behind';
+          paceMessage = 'Over budget';
+        } else if (totalValue > expectedProgress * 1.05) {
+          paceStatus = 'behind';
+          paceMessage = 'Spending too fast';
+        } else if (totalValue > expectedProgress * 0.85) {
+          paceStatus = 'on_track';
+          paceMessage = 'Within budget';
+        } else {
+          paceStatus = 'ahead';
+          paceMessage = 'Under budget';
+        }
+      } else if (totalValue >= expectedProgress * 1.05) {
         paceStatus = 'ahead';
         paceMessage = 'Ahead of pace';
       } else if (totalValue >= expectedProgress * 0.85) {
@@ -300,7 +325,7 @@ export function computeDashboard(
   const metricsWithTargets = allRollups.filter((r) => r.targetValue && r.targetValue > 0);
   const onTrackCount = metricsWithTargets.filter((r) => r.paceStatus === 'ahead' || r.paceStatus === 'on_track').length;
   const completionRate = metricsWithTargets.length > 0
-    ? Math.round(metricsWithTargets.reduce((acc, r) => acc + (r.progressPercent || 0), 0) / metricsWithTargets.length)
+    ? Math.round(metricsWithTargets.reduce((acc, r) => acc + attainmentPercent(r), 0) / metricsWithTargets.length)
     : 0;
 
   const summaryStats: DashboardSummaryStats = {
@@ -384,27 +409,15 @@ export function computeReviewStats(
   let missedKpi: { metricName: string; percent: number } | undefined;
 
   if (metricsWithTargets.length > 0) {
-    const sorted = [...metricsWithTargets].sort((a, b) => (b.progressPercent || 0) - (a.progressPercent || 0));
+    const sorted = [...metricsWithTargets].sort((a, b) => attainmentPercent(b) - attainmentPercent(a));
     const highest = sorted[0];
     const lowest = sorted[sorted.length - 1];
 
-    if (highest && (highest.progressPercent || 0) >= 100) {
-      strongestKpi = {
-        metricName: highest.metric.name,
-        percent: highest.progressPercent || 0,
-      };
-    } else if (highest) {
-      strongestKpi = {
-        metricName: highest.metric.name,
-        percent: highest.progressPercent || 0,
-      };
+    if (highest) {
+      strongestKpi = { metricName: highest.metric.name, percent: attainmentPercent(highest) };
     }
-
-    if (lowest && (lowest.progressPercent || 0) < 100) {
-      missedKpi = {
-        metricName: lowest.metric.name,
-        percent: lowest.progressPercent || 0,
-      };
+    if (lowest && attainmentPercent(lowest) < 100) {
+      missedKpi = { metricName: lowest.metric.name, percent: attainmentPercent(lowest) };
     }
   }
 
@@ -460,6 +473,7 @@ export function calculateGoalProgress(
   formattedCurrent: string;
   formattedTarget: string;
   isCompleted: boolean;
+  isOver: boolean; // Budget goal already exceeded
 } {
   if (!metric) {
     return {
@@ -469,6 +483,7 @@ export function calculateGoalProgress(
       formattedCurrent: '0',
       formattedTarget: String(goal.targetValue),
       isCompleted: false,
+      isOver: false,
     };
   }
 
@@ -490,7 +505,9 @@ export function calculateGoalProgress(
   }
 
   const progressPercent = targetValue > 0 ? Math.min(Math.round((currentValue / targetValue) * 100), 100) : 0;
-  const isCompleted = currentValue >= targetValue;
+  // A budget goal is only "done" once its window closes without overspending.
+  const isOver = Boolean(metric.lowerIsBetter) && currentValue > targetValue;
+  const isCompleted = metric.lowerIsBetter ? !isOver && getTodayIso() > goal.endDate : currentValue >= targetValue;
 
   return {
     currentValue,
@@ -499,6 +516,7 @@ export function calculateGoalProgress(
     formattedCurrent: formatMetricValue(currentValue, metric, currencySymbol),
     formattedTarget: formatMetricValue(targetValue, metric, currencySymbol),
     isCompleted,
+    isOver,
   };
 }
 
@@ -523,6 +541,7 @@ export interface GoalCascadeLevel {
   target: number;
   current: number;
   progressPercent: number;
+  isOver: boolean; // Budget level exceeded (lowerIsBetter only)
   formattedTarget: string;
   formattedCurrent: string;
 }
@@ -574,6 +593,7 @@ export function computeGoalCascade(
       target,
       current,
       progressPercent: target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 100,
+      isOver: Boolean(metric.lowerIsBetter) && current > target,
       formattedTarget: formatMetricValue(target, metric, currencySymbol),
       formattedCurrent: formatMetricValue(current, metric, currencySymbol),
     };

@@ -35,6 +35,13 @@ export class LocalTrackerApi implements TrackerApi {
 
     if (!this.db.reminders) this.db.reminders = [];
 
+    // Built-in "Money Spent" predates the lower-is-better flag; it's a budget.
+    const spent = this.db.metrics.find((m) => m.id === 'metric-spent');
+    if (spent && spent.lowerIsBetter === undefined) {
+      spent.lowerIsBetter = true;
+      await MacDiskStorageAdapter.save(this.db);
+    }
+
     // Drop sub-goals the old pacing modal copied out of a parent goal; the cascade is computed live now.
     const isPacedCopy = (g: Goal) =>
       g.note?.startsWith('Auto-generated pacing breakdown') || g.note?.startsWith('Paced from ');

@@ -13,11 +13,18 @@ import {
 } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { localApi } from '../../services/localApi';
-import { DashboardCategorySummary, DashboardSummaryStats } from '../../types';
+import { DashboardCategorySummary, DashboardSummaryStats, MetricRollup } from '../../types';
 import { parseIsoDate, formatToIso, shiftDate } from '../../utils/dateUtils';
 import { TrendBars } from './TrendBars';
 
 type DashboardPeriod = 'week' | 'month' | 'quarter' | 'year';
+
+// Full bar = success for normal targets, but = limit hit for budgets.
+function barColor(r: MetricRollup): 'good' | 'over' | 'neutral' {
+  const pct = r.progressPercent ?? 0;
+  if (r.metric.lowerIsBetter) return pct > 100 ? 'over' : 'neutral';
+  return pct >= 100 ? 'good' : 'neutral';
+}
 
 export const DashboardView: React.FC = () => {
   const { activeDate, database } = useTracker();
@@ -403,8 +410,8 @@ export const DashboardView: React.FC = () => {
                           </div>
 
                           {rollup.progressPercent !== undefined && (
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: rollup.progressPercent >= 100 ? '#34d399' : '#ffffff', marginTop: 2 }}>
-                              {rollup.progressPercent}% achieved
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: barColor(rollup) === 'good' ? '#34d399' : barColor(rollup) === 'over' ? '#f87171' : '#ffffff', marginTop: 2 }}>
+                              {rollup.progressPercent}% {rollup.metric.lowerIsBetter ? 'of budget used' : 'achieved'}
                             </div>
                           )}
                         </div>
@@ -424,8 +431,10 @@ export const DashboardView: React.FC = () => {
                           className="progress-bar-fill"
                           style={{
                             width: `${Math.min(rollup.progressPercent, 100)}%`,
-                            background: rollup.progressPercent >= 100
+                            background: barColor(rollup) === 'good'
                               ? 'linear-gradient(90deg, #10b981, #34d399)'
+                              : barColor(rollup) === 'over'
+                              ? 'linear-gradient(90deg, #dc2626, #f87171)'
                               : 'linear-gradient(90deg, #71717a, #ffffff)',
                           }}
                         />

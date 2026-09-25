@@ -20,6 +20,7 @@ export interface Metric {
   unit?: string;           // e.g. "hrs", "books", "Rs.", "items"
   targetValue?: number;    // e.g. 25, 4, 100000
   targetPeriod?: TargetPeriod;
+  lowerIsBetter?: boolean; // Target is a budget/limit (e.g. money spent): staying under it is success
   icon?: string;
   color?: string;
   isDefaultQuickLog?: boolean;

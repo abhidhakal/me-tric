@@ -100,6 +100,9 @@ function formatHoursMinutes(seconds: number): string {
   return `${mins}m`;
 }
 
+// Budget metric past its limit.
+const OVER_STYLE: React.CSSProperties = { background: 'linear-gradient(90deg, #dc2626, #f87171)' };
+
 export const TodayView: React.FC = () => {
   const {
     activeDate,
@@ -270,7 +273,7 @@ export const TodayView: React.FC = () => {
                     </div>
                   ) : metric.targetValue ? (
                     <div className="metric-target-sub">
-                      {dayTarget !== undefined && `Today's share: ${formatMetricValue(metric.type === 'number' ? Math.round(dayTarget * 10) / 10 : Math.round(dayTarget), metric, settings.currencySymbol)} · `}
+                      {dayTarget !== undefined && `${metric.lowerIsBetter ? "Today's budget" : "Today's share"}: ${formatMetricValue(metric.type === 'number' ? Math.round(dayTarget * 10) / 10 : Math.round(dayTarget), metric, settings.currencySymbol)} · `}
                       {metric.targetValue} {metric.unit || ''} / {metric.targetPeriod}
                     </div>
                   ) : null}
@@ -278,13 +281,19 @@ export const TodayView: React.FC = () => {
 
                 {goalLevel && (
                   <div className="progress-bar-track" style={{ margin: '8px 0' }}>
-                    <div className="progress-bar-fill" style={{ width: `${goalLevel.progressPercent}%` }} />
+                    <div className="progress-bar-fill" style={{ width: `${goalLevel.progressPercent}%`, ...(goalLevel.isOver && OVER_STYLE) }} />
                   </div>
                 )}
 
                 {dayTarget !== undefined && dayTarget > 0 && (
                   <div className="progress-bar-track" style={{ margin: '8px 0' }}>
-                    <div className="progress-bar-fill" style={{ width: `${Math.min(Math.round((total / dayTarget) * 100), 100)}%` }} />
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${Math.min(Math.round((total / dayTarget) * 100), 100)}%`,
+                        ...(metric.lowerIsBetter && total > dayTarget && OVER_STYLE),
+                      }}
+                    />
                   </div>
                 )}
 

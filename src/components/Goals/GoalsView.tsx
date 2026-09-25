@@ -87,6 +87,20 @@ export const GoalsSection: React.FC = () => {
                       </div>
                     </div>
 
+                    {progress.isOver && (
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          color: '#f87171',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                        }}
+                      >
+                        Over budget
+                      </span>
+                    )}
                     {progress.isCompleted && (
                       <span
                         style={{
@@ -140,12 +154,14 @@ export const GoalsSection: React.FC = () => {
                         className="progress-bar-fill"
                         style={{
                           width: `${progress.progressPercent}%`,
-                          background: 'linear-gradient(90deg, #71717a, #ffffff)',
+                          background: progress.isOver
+                            ? 'linear-gradient(90deg, #dc2626, #f87171)'
+                            : 'linear-gradient(90deg, #71717a, #ffffff)',
                         }}
                       />
                     </div>
 
-                    {cascade.length > 0 && !progress.isCompleted && (
+                    {cascade.length > 0 && !progress.isCompleted && !progress.isOver && (
                       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {cascade.map((level) => (
                           <div key={level.period}>
@@ -156,7 +172,7 @@ export const GoalsSection: React.FC = () => {
                               </span>
                             </div>
                             <div className="progress-bar-track" style={{ height: 3, marginTop: 4 }}>
-                              <div className="progress-bar-fill" style={{ width: `${level.progressPercent}%`, background: '#a1a1aa' }} />
+                              <div className="progress-bar-fill" style={{ width: `${level.progressPercent}%`, background: level.isOver ? '#f87171' : '#a1a1aa' }} />
                             </div>
                           </div>
                         ))}
