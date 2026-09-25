@@ -69,30 +69,16 @@ export interface Review {
   updatedAt: string;
 }
 
-export interface TomorrowPlan {
-  id: string;
-  date: string; // Target date (YYYY-MM-DD)
-  title: string;
-  time?: string; // Optional HH:mm (e.g. "14:30")
-  datetime?: string; // Optional full ISO string for timed reminders (e.g. "2026-09-09T14:30:00")
-  completed?: boolean;
-  notified?: boolean; // Whether desktop notification has fired for timed reminder
-  createdAt: string;
-}
+export type ReminderRepeat = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-export type ReminderItem = TomorrowPlan;
-
-export interface ReminderSettings {
-  enabled: boolean;
-  time: string; // HH:mm format, e.g. "21:00"
-  lastNotifiedDate?: string; // YYYY-MM-DD
-}
-
-export interface OneTimeReminder {
+export interface Reminder {
   id: string;
   title: string;
-  datetime: string; // ISO string, e.g. "2026-09-09T14:30:00"
-  fired?: boolean;
+  datetime: string; // Next occurrence, local "YYYY-MM-DDTHH:mm"
+  repeat: ReminderRepeat;
+  notify: boolean;
+  notified?: boolean; // One-time reminder already fired
+  completed?: boolean; // One-time reminder checked off
   createdAt: string;
 }
 
@@ -100,8 +86,6 @@ export interface AppSettings {
   currencySymbol: string;
   theme: 'obsidian';
   weekStartsOnMonday: boolean;
-  reminder?: ReminderSettings;
-  oneTimeReminders?: OneTimeReminder[];
   activityTrackingEnabled?: boolean;
 }
 
@@ -155,7 +139,7 @@ export interface AppDatabase {
   events: LifeEvent[];
   goals: Goal[];
   reviews: Review[];
-  plans?: TomorrowPlan[];
+  reminders: Reminder[];
   settings: AppSettings;
 }
 

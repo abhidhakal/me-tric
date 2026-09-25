@@ -137,6 +137,7 @@ export class MacDiskStorageAdapter {
         events: [],
         goals: [],
         reviews: [],
+        reminders: [],
       };
       await window.electronAPI.saveDatabase(empty);
     }

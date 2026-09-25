@@ -433,7 +433,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Reset to Clean Slate
                 </div>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  This action permanently deletes all logged metric entries, life events, and tomorrow plans. Configured metrics and goals are preserved with zero counts.
+                  This action permanently deletes all logged metric entries, life events, and reminders. Configured metrics and goals are preserved with zero counts.
                 </p>
               </div>
 

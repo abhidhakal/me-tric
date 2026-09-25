@@ -7,7 +7,7 @@ import {
   LifeEvent,
   Goal,
   Review,
-  TomorrowPlan,
+  Reminder,
   DashboardCategorySummary,
   DashboardSummaryStats,
   ReviewComputedStats,
@@ -33,26 +33,7 @@ export class LocalTrackerApi implements TrackerApi {
       this.db.metrics = [];
     }
 
-    // Seamlessly migrate any legacy settings.oneTimeReminders into db.plans
-    if (this.db.settings?.oneTimeReminders && this.db.settings.oneTimeReminders.length > 0) {
-      if (!this.db.plans) this.db.plans = [];
-      for (const otr of this.db.settings.oneTimeReminders) {
-        const date = otr.datetime ? otr.datetime.slice(0, 10) : '';
-        const time = otr.datetime && otr.datetime.length >= 16 ? otr.datetime.slice(11, 16) : undefined;
-        this.db.plans.push({
-          id: otr.id || `migrated-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          date: date || new Date().toISOString().slice(0, 10),
-          title: otr.title,
-          time,
-          datetime: otr.datetime,
-          completed: false,
-          notified: Boolean(otr.fired),
-          createdAt: otr.createdAt || new Date().toISOString(),
-        });
-      }
-      this.db.settings.oneTimeReminders = [];
-      await MacDiskStorageAdapter.save(this.db);
-    }
+    if (!this.db.reminders) this.db.reminders = [];
 
     this.isInitialized = true;
     return this.db;
@@ -285,72 +266,39 @@ export class LocalTrackerApi implements TrackerApi {
     return true;
   }
 
-  // --- Plans for Tomorrow / Daily Planning & Reminders ---
+  // --- Reminders ---
 
-  async getPlansForDate(date: string): Promise<TomorrowPlan[]> {
+  async getReminders(): Promise<Reminder[]> {
     await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    return this.db.plans.filter((p) => p.date === date);
+    return [...this.db.reminders];
   }
 
-  async getAllPlans(): Promise<TomorrowPlan[]> {
+  async addReminder(reminder: Omit<Reminder, 'id' | 'createdAt'>): Promise<Reminder> {
     await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    return [...this.db.plans];
-  }
-
-  async addPlan(plan: { date: string; title: string; time?: string; datetime?: string }): Promise<TomorrowPlan> {
-    await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    const newPlan: TomorrowPlan = {
-      id: `plan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      date: plan.date,
-      title: plan.title.trim(),
-      time: plan.time,
-      datetime: plan.datetime,
-      completed: false,
-      notified: false,
+    const newReminder: Reminder = {
+      ...reminder,
+      id: `rem-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       createdAt: new Date().toISOString(),
     };
-    this.db.plans.push(newPlan);
+    this.db.reminders.push(newReminder);
     await MacDiskStorageAdapter.save(this.db);
-    return newPlan;
+    return newReminder;
   }
 
-  async togglePlan(planId: string): Promise<TomorrowPlan | null> {
+  async updateReminder(id: string, patch: Partial<Reminder>): Promise<Reminder | null> {
     await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    const plan = this.db.plans.find((p) => p.id === planId);
-    if (plan) {
-      plan.completed = !plan.completed;
-      await MacDiskStorageAdapter.save(this.db);
-      return { ...plan };
-    }
-    return null;
+    const reminder = this.db.reminders.find((r) => r.id === id);
+    if (!reminder) return null;
+    Object.assign(reminder, patch);
+    await MacDiskStorageAdapter.save(this.db);
+    return { ...reminder };
   }
 
-  async deletePlan(planId: string): Promise<boolean> {
+  async deleteReminder(id: string): Promise<boolean> {
     await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    const prevLen = this.db.plans.length;
-    this.db.plans = this.db.plans.filter((p) => p.id !== planId);
-    if (this.db.plans.length !== prevLen) {
-      await MacDiskStorageAdapter.save(this.db);
-      return true;
-    }
-    return false;
-  }
-
-  async markPlanNotified(planId: string): Promise<boolean> {
-    await this.ensureLoaded();
-    if (!this.db.plans) this.db.plans = [];
-    const plan = this.db.plans.find((p) => p.id === planId);
-    if (plan) {
-      plan.notified = true;
-      await MacDiskStorageAdapter.save(this.db);
-      return true;
-    }
-    return false;
+    this.db.reminders = this.db.reminders.filter((r) => r.id !== id);
+    await MacDiskStorageAdapter.save(this.db);
+    return true;
   }
 
   // --- Goals ---

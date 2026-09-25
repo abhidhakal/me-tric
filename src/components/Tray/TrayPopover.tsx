@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useTracker } from '../../context/TrackerContext';
 import {
   Maximize2,
-  CheckCircle2,
   Circle,
   Plus,
   Minus,
@@ -17,8 +16,8 @@ export const TrayPopover: React.FC = () => {
   const {
     metrics,
     todayEntries,
-    activePlans,
-    togglePlan,
+    reminders,
+    completeReminder,
     logMetric,
     activityStatus,
     activitySummary,
@@ -153,8 +152,10 @@ export const TrayPopover: React.FC = () => {
     return `${mins}m`;
   }, [activitySummary?.totalActiveSeconds]);
 
-  // Completed plans count
-  const completedPlansCount = activePlans.filter((p) => p.completed).length;
+  const upcomingReminders = reminders
+    .filter((r) => !r.completed)
+    .sort((a, b) => a.datetime.localeCompare(b.datetime))
+    .slice(0, 4);
 
   return (
     <div
@@ -459,52 +460,46 @@ export const TrayPopover: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: '#d4d4d8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <Clock size={12} color="#ffffff" />
-              <span>Today's Priorities</span>
+              <span>Reminders</span>
             </div>
-            {activePlans.length > 0 && (
-              <span style={{ fontSize: '11px', color: '#a1a1aa' }}>
-                {completedPlansCount} of {activePlans.length} done
-              </span>
-            )}
           </div>
 
-          {activePlans.length === 0 ? (
+          {upcomingReminders.length === 0 ? (
             <div style={{ fontSize: '12px', color: '#71717a', padding: '6px 0', textAlign: 'center' }}>
-              No tasks for today. Open app to add one!
+              No upcoming reminders.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {activePlans.slice(0, 4).map((plan) => (
+              {upcomingReminders.map((r) => (
                 <div
-                  key={plan.id}
-                  onClick={() => togglePlan(plan.id)}
+                  key={r.id}
+                  onClick={() => completeReminder(r.id)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
                     padding: '6px 8px',
                     borderRadius: '8px',
-                    background: plan.completed ? 'transparent' : 'rgba(255, 255, 255, 0.02)',
+                    background: 'rgba(255, 255, 255, 0.02)',
                     cursor: 'pointer',
                     transition: 'all 0.12s ease',
                   }}
                 >
-                  {plan.completed ? (
-                    <CheckCircle2 size={15} color="#22c55e" style={{ flexShrink: 0 }} />
-                  ) : (
-                    <Circle size={15} color="#71717a" style={{ flexShrink: 0 }} />
-                  )}
+                  <Circle size={15} color="#71717a" style={{ flexShrink: 0 }} />
                   <span
                     style={{
+                      flex: 1,
                       fontSize: '12px',
-                      color: plan.completed ? '#71717a' : '#ffffff',
-                      textDecoration: plan.completed ? 'line-through' : 'none',
+                      color: '#ffffff',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    {plan.title}
+                    {r.title}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                    {r.datetime.slice(5).replace('T', ' ')}
                   </span>
                 </div>
               ))}

@@ -4,7 +4,7 @@ import {
   LifeEvent,
   Goal,
   Review,
-  TomorrowPlan,
+  Reminder,
   AppDatabase,
   AppSettings,
   UserProfile,
@@ -52,13 +52,11 @@ export interface TrackerApi {
   logEvent(event: { title: string; date: string; description?: string; category?: string }): Promise<LifeEvent>;
   deleteEvent(eventId: string): Promise<boolean>;
 
-  // Plans for Tomorrow / Daily Planning & Reminders
-  getPlansForDate(date: string): Promise<TomorrowPlan[]>;
-  getAllPlans(): Promise<TomorrowPlan[]>;
-  addPlan(plan: { date: string; title: string; time?: string; datetime?: string }): Promise<TomorrowPlan>;
-  togglePlan(planId: string): Promise<TomorrowPlan | null>;
-  deletePlan(planId: string): Promise<boolean>;
-  markPlanNotified(planId: string): Promise<boolean>;
+  // Reminders
+  getReminders(): Promise<Reminder[]>;
+  addReminder(reminder: Omit<Reminder, 'id' | 'createdAt'>): Promise<Reminder>;
+  updateReminder(id: string, patch: Partial<Reminder>): Promise<Reminder | null>;
+  deleteReminder(id: string): Promise<boolean>;
 
   // Goals
   getGoals(): Promise<Goal[]>;

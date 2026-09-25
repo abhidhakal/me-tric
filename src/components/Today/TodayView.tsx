@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Sparkles, CheckCircle2, Check, CornerDownLeft, Clock } from 'lucide-react';
+import { Trash2, CheckCircle2, CornerDownLeft, Clock } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
 import { formatMetricValue } from '../../utils/formatters';
@@ -111,9 +111,6 @@ export const TodayView: React.FC = () => {
     logEvent,
     deleteEvent,
     setActiveTab,
-    activePlans,
-    togglePlan,
-    deletePlan,
     settings,
     activitySummary,
   } = useTracker();
@@ -226,107 +223,6 @@ export const TodayView: React.FC = () => {
           </span>
         </button>
       </form>
-
-      {/* TODAY'S REMINDERS & PRIORITIES (FROM YESTERDAY'S PLAN) */}
-      {activePlans.length > 0 && (
-        <div className="card-panel" style={{ marginBottom: 20 }}>
-          <div className="panel-header">
-            <span className="panel-title">Today's Reminders</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {activePlans.filter((p) => p.completed).length} of {activePlans.length} done
-            </span>
-          </div>
-
-          <div className="highlight-list">
-            {activePlans.map((plan) => (
-              <div
-                key={plan.id}
-                className="highlight-item"
-                onClick={() => togglePlan(plan.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="highlight-left">
-                  <div
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 4,
-                      border: `1px solid ${plan.completed ? '#ffffff' : 'var(--border-medium)'}`,
-                      background: plan.completed ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#000000',
-                      flexShrink: 0,
-                      transition: 'all 0.12s ease',
-                    }}
-                  >
-                    {plan.completed && <Check size={11} strokeWidth={3} />}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                    <span
-                      className="highlight-title"
-                      style={{
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
-                        color: plan.completed ? 'var(--text-muted)' : '#ffffff',
-                        textDecoration: plan.completed ? 'line-through' : 'none',
-                      }}
-                    >
-                      {plan.title}
-                    </span>
-                    {plan.time && (
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 3,
-                          padding: '1px 6px',
-                          borderRadius: 4,
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          color: 'var(--text-secondary)',
-                          fontSize: '0.7rem',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <Clock size={10} style={{ color: 'var(--text-muted)' }} />
-                        {plan.time}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={(e) => e.stopPropagation()}>
-                  {!plan.completed && (
-                    <button
-                      type="button"
-                      className="chip-btn"
-                      style={{ fontSize: '0.74rem', padding: '3px 8px', color: '#ffffff' }}
-                      onClick={async () => {
-                        await togglePlan(plan.id);
-                        await logEvent(plan.title);
-                      }}
-                      title="Mark done and log to Today's Accomplishments"
-                    >
-                      Done & Log
-                    </button>
-                  )}
-                  <button
-                    className="icon-btn"
-                    onClick={() => deletePlan(plan.id)}
-                    title="Remove"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 1. METRICS */}
       <div className="card-panel">

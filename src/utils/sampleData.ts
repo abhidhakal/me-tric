@@ -217,6 +217,7 @@ export function createInitialDatabase(): AppDatabase {
         updatedAt: shiftDate(monday, -1),
       },
     ],
+    reminders: [],
   };
 }
 
@@ -299,5 +300,6 @@ export function createBlankDatabase(): AppDatabase {
     events: [],
     goals: [],
     reviews: [],
+    reminders: [],
   };
 }

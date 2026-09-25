@@ -157,3 +157,34 @@ export function getDaysList(startIso: string, endIso: string): string[] {
   }
   return result;
 }
+
+/** Local "YYYY-MM-DDTHH:mm" for a Date. */
+export function formatLocalDateTime(d: Date): string {
+  return `${formatToIso(d)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * Next occurrence of a repeating local datetime strictly after `after`.
+ * Monthly/yearly clamp to the last day of shorter months.
+ */
+export function nextOccurrence(
+  datetime: string,
+  repeat: 'daily' | 'weekly' | 'monthly' | 'yearly',
+  after: Date = new Date()
+): string {
+  // ponytail: clamping drifts a 31st reminder to the 30th after a short month; store an anchor day if that matters
+  const d = new Date(datetime);
+  do {
+    if (repeat === 'daily') d.setDate(d.getDate() + 1);
+    else if (repeat === 'weekly') d.setDate(d.getDate() + 7);
+    else {
+      const day = d.getDate();
+      d.setDate(1);
+      if (repeat === 'monthly') d.setMonth(d.getMonth() + 1);
+      else d.setFullYear(d.getFullYear() + 1);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      d.setDate(Math.min(day, lastDay));
+    }
+  } while (d <= after);
+  return formatLocalDateTime(d);
+}
