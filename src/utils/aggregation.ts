@@ -8,7 +8,8 @@ import {
   DashboardCategorySummary,
   DashboardSummaryStats,
   ReviewComputedStats,
-  MetricCategory
+  MetricCategory,
+  TargetPeriod
 } from '../types';
 import {
   getDayShortName,
@@ -24,6 +25,21 @@ import {
   getTodayIso
 } from './dateUtils';
 import { formatMetricValue, formatDuration } from './formatters';
+
+export const PERIOD_DAYS: Record<TargetPeriod, number> = {
+  day: 1,
+  week: 7,
+  month: 30.4375,
+  quarter: 91.25,
+  year: 365.25,
+};
+
+/** A standalone metric's target scaled down to one day, in entry units (minutes for duration). */
+export function dailyShare(metric: Metric): number | undefined {
+  if (!metric.targetValue) return undefined;
+  const base = metric.type === 'duration' ? metric.targetValue * 60 : metric.targetValue;
+  return base / PERIOD_DAYS[metric.targetPeriod || 'week'];
+}
 
 /**
  * Computes a rollup for a single metric across a specific date window
@@ -73,12 +89,7 @@ export function computeMetricRollup(
 
   if (metric.targetValue) {
     const baseTarget = metric.type === 'duration' ? metric.targetValue * 60 : metric.targetValue;
-    const targetPeriod = metric.targetPeriod || 'week';
-    const daysInTargetPeriod =
-      targetPeriod === 'day' ? 1 :
-      targetPeriod === 'week' ? 7 :
-      targetPeriod === 'month' ? 30.4375 :
-      targetPeriod === 'quarter' ? 91.25 : 365.25;
+    const daysInTargetPeriod = PERIOD_DAYS[metric.targetPeriod || 'week'];
 
     const factor = periodDays / daysInTargetPeriod;
     targetValue = Math.max(1, Math.round(baseTarget * factor));
@@ -489,4 +500,82 @@ export function calculateGoalProgress(
     formattedTarget: formatMetricValue(targetValue, metric, currencySymbol),
     isCompleted,
   };
+}
+
+/** The goal currently driving a metric's target, if any. */
+export function getActiveGoal(metricId: string, goals: Goal[], date: string = getTodayIso()): Goal | undefined {
+  return goals.find((g) => g.metricId === metricId && g.startDate <= date && date <= g.endDate);
+}
+
+/**
+ * Metrics with an active goal take their target from that goal (goal wins over the metric's own target).
+ */
+export function applyGoalTargets(metrics: Metric[], goals: Goal[], date: string = getTodayIso()): Metric[] {
+  return metrics.map((m) => {
+    const goal = getActiveGoal(m.id, goals, date);
+    return goal ? { ...m, targetValue: goal.targetValue, targetPeriod: goal.period } : m;
+  });
+}
+
+export interface GoalCascadeLevel {
+  period: 'month' | 'week' | 'day';
+  label: string;
+  target: number;
+  current: number;
+  progressPercent: number;
+  formattedTarget: string;
+  formattedCurrent: string;
+}
+
+const CASCADE_LEVELS: Record<string, GoalCascadeLevel['period'][]> = {
+  year: ['month', 'week', 'day'],
+  quarter: ['month', 'week', 'day'],
+  month: ['week', 'day'],
+  week: ['day'],
+  day: [],
+};
+
+/**
+ * Breaks a goal down into this month / this week / today.
+ * Each level's target = what's still left of the goal, spread evenly over the days left,
+ * so falling behind raises the next period's target and getting ahead lowers it.
+ */
+export function computeGoalCascade(
+  goal: Goal,
+  metric: Metric,
+  entries: MetricEntry[],
+  currencySymbol: string = 'Rs.',
+  today: string = getTodayIso()
+): GoalCascadeLevel[] {
+  if (today < goal.startDate || today > goal.endDate) return [];
+
+  const scale = metric.type === 'duration' ? 60 : 1;
+  const total = goal.targetValue * scale;
+  const sum = (start: string, end: string) =>
+    entries
+      .filter((e) => e.metricId === goal.metricId && e.date >= start && e.date <= end)
+      .reduce((acc, e) => acc + e.value, 0);
+
+  return (CASCADE_LEVELS[goal.period] || []).map((period) => {
+    const range =
+      period === 'month' ? getMonthRange(today) : period === 'week' ? getWeekRange(today) : { start: today, end: today };
+    const start = range.start > goal.startDate ? range.start : goal.startDate;
+    const end = range.end < goal.endDate ? range.end : goal.endDate;
+
+    const remaining = Math.max(0, total - sum(goal.startDate, shiftDate(start, -1)));
+    const daysLeft = getDaysList(start, goal.endDate).length;
+    const rawTarget = (remaining / daysLeft) * getDaysList(start, end).length;
+    const target = metric.type === 'number' ? Math.ceil(rawTarget * 10) / 10 : Math.ceil(rawTarget);
+    const current = sum(start, end);
+
+    return {
+      period,
+      label: period === 'month' ? 'This month' : period === 'week' ? 'This week' : 'Today',
+      target,
+      current,
+      progressPercent: target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 100,
+      formattedTarget: formatMetricValue(target, metric, currencySymbol),
+      formattedCurrent: formatMetricValue(current, metric, currencySymbol),
+    };
+  });
 }

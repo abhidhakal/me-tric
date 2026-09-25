@@ -3,6 +3,7 @@ import { Trash2, CheckCircle2, CornerDownLeft, Clock } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { formatDateHeader, getTodayIso } from '../../utils/dateUtils';
 import { formatMetricValue } from '../../utils/formatters';
+import { computeGoalCascade, dailyShare, getActiveGoal } from '../../utils/aggregation';
 import { RemindersSection } from './RemindersSection';
 import { DateNavigator } from '../Common/DateNavigator';
 
@@ -113,6 +114,8 @@ export const TodayView: React.FC = () => {
     setActiveTab,
     settings,
     activitySummary,
+    goals,
+    database,
   } = useTracker();
 
   const today = getTodayIso();
@@ -134,8 +137,16 @@ export const TodayView: React.FC = () => {
   const metricValuesToday = visibleMetrics.map((m) => {
     const entries = todayEntries.filter((e) => e.metricId === m.id);
     const sum = entries.reduce((acc, curr) => acc + curr.value, 0);
+    // A metric with an active goal shows the goal's current-period number instead of its own target.
+    const goal = getActiveGoal(m.id, goals, activeDate);
+    const goalLevel = goal ? computeGoalCascade(goal, m, database?.entries || [], settings.currencySymbol, activeDate)[0] : undefined;
+    // Standalone metrics: today is measured against the day's share of the target (e.g. 25h/week → ~3h 34m).
+    const dayTarget = !goal && m.type !== 'boolean' && m.type !== 'rating' ? dailyShare(m) : undefined;
     return {
       metric: m,
+      goal,
+      goalLevel,
+      dayTarget,
       total: sum,
       formatted: formatMetricValue(sum, m, settings.currencySymbol),
       hasLogged: entries.length > 0,
@@ -232,7 +243,7 @@ export const TodayView: React.FC = () => {
 
         {visibleMetrics.length > 0 ? (
           <div className="metric-grid">
-            {metricValuesToday.map(({ metric, formatted, hasLogged, total }) => (
+            {metricValuesToday.map(({ metric, formatted, hasLogged, total, goal, goalLevel, dayTarget }) => (
               <div key={metric.id} className="metric-card">
                 <div>
                   <div className="metric-top">
@@ -251,22 +262,29 @@ export const TodayView: React.FC = () => {
                     {formatted}
                   </div>
 
-                  {metric.targetValue && (
-                    <div className="metric-target-sub">
-                      Target: {metric.targetValue} {metric.unit || ''} / {metric.targetPeriod}
+                  {goal ? (
+                    <div className="metric-target-sub" title={`From goal: ${goal.title}`}>
+                      {goalLevel
+                        ? `${goalLevel.label}: ${goalLevel.formattedCurrent} / ${goalLevel.formattedTarget}`
+                        : `Goal: ${goal.title}`}
                     </div>
-                  )}
+                  ) : metric.targetValue ? (
+                    <div className="metric-target-sub">
+                      {dayTarget !== undefined && `Today's share: ${formatMetricValue(metric.type === 'number' ? Math.round(dayTarget * 10) / 10 : Math.round(dayTarget), metric, settings.currencySymbol)} · `}
+                      {metric.targetValue} {metric.unit || ''} / {metric.targetPeriod}
+                    </div>
+                  ) : null}
                 </div>
 
-                {/* Visual progress bar if target is set */}
-                {metric.targetValue && metric.type === 'duration' && (
+                {goalLevel && (
                   <div className="progress-bar-track" style={{ margin: '8px 0' }}>
-                    <div
-                      className="progress-bar-fill"
-                      style={{
-                        width: `${Math.min(Math.round((total / (metric.targetValue * 60)) * 100), 100)}%`,
-                      }}
-                    />
+                    <div className="progress-bar-fill" style={{ width: `${goalLevel.progressPercent}%` }} />
+                  </div>
+                )}
+
+                {dayTarget !== undefined && dayTarget > 0 && (
+                  <div className="progress-bar-track" style={{ margin: '8px 0' }}>
+                    <div className="progress-bar-fill" style={{ width: `${Math.min(Math.round((total / dayTarget) * 100), 100)}%` }} />
                   </div>
                 )}
 

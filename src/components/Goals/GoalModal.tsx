@@ -1,51 +1,47 @@
 import React, { useState } from 'react';
 import { X, Check, CornerDownLeft } from 'lucide-react';
 import { Metric, Goal, TargetPeriod } from '../../types';
-import { getTodayIso, getWeekRange, getMonthRange, getYearRange } from '../../utils/dateUtils';
-import { PacingBreakdownModal, PacingSubgoal } from '../Common/PacingBreakdownModal';
+import { useTracker } from '../../context/TrackerContext';
+import { formatMetricValue } from '../../utils/formatters';
+import { getTodayIso, getWeekRange, getMonthRange, getYearRange, getDaysList } from '../../utils/dateUtils';
 
 interface GoalModalProps {
   isOpen: boolean;
   metrics: Metric[];
+  goalToEdit?: Goal | null;
   onClose: () => void;
-  onSave: (
-    goal: Omit<Goal, 'id' | 'createdAt'> & { id?: string },
-    subgoals?: Array<Omit<Goal, 'id' | 'createdAt'>>
-  ) => void;
+  onSave: (goal: Omit<Goal, 'id' | 'createdAt'> & { id?: string }) => void;
 }
 
 export const GoalModal: React.FC<GoalModalProps> = ({
   isOpen,
   metrics,
+  goalToEdit,
   onClose,
   onSave,
 }) => {
+  const { settings, goals } = useTracker();
   const today = getTodayIso();
-  const weekInfo = getWeekRange(today);
+  const yearInfo = getYearRange(today);
 
-  const [title, setTitle] = useState('');
-  const [metricId, setMetricId] = useState(metrics[0]?.id || '');
-  const [targetValue, setTargetValue] = useState('3');
-  const [period, setPeriod] = useState<TargetPeriod>('week');
-  const [startDate, setStartDate] = useState(weekInfo.start);
-  const [endDate, setEndDate] = useState(weekInfo.end);
-  const [note, setNote] = useState('');
+  // One goal per metric at a time: another goal on the same metric with overlapping dates blocks it.
+  const conflictFor = (mId: string, start: string, end: string) =>
+    goals.find((g) => g.id !== goalToEdit?.id && g.metricId === mId && g.startDate <= end && start <= g.endDate);
 
-  // Pacing dialog state
-  const [isPacingOpen, setIsPacingOpen] = useState(false);
-  const [pendingMainGoal, setPendingMainGoal] = useState<{
-    title: string;
-    metricId: string;
-    targetValue: number;
-    period: TargetPeriod;
-    startDate: string;
-    endDate: string;
-    note?: string;
-  } | null>(null);
+  const [title, setTitle] = useState(goalToEdit?.title ?? '');
+  const [metricId, setMetricId] = useState(
+    () => goalToEdit?.metricId ?? (metrics.find((m) => !conflictFor(m.id, yearInfo.start, yearInfo.end)) ?? metrics[0])?.id ?? ''
+  );
+  const [targetValue, setTargetValue] = useState(goalToEdit ? String(goalToEdit.targetValue) : '');
+  const [period, setPeriod] = useState<TargetPeriod>(goalToEdit?.period ?? 'year');
+  const [startDate, setStartDate] = useState(goalToEdit?.startDate ?? yearInfo.start);
+  const [endDate, setEndDate] = useState(goalToEdit?.endDate ?? yearInfo.end);
+  const [note, setNote] = useState(goalToEdit?.note ?? '');
 
   if (!isOpen) return null;
 
   const selectedMetric = metrics.find((m) => m.id === metricId);
+  const conflict = conflictFor(metricId, startDate, endDate);
 
   const handlePeriodChange = (p: TargetPeriod) => {
     setPeriod(p);
@@ -64,18 +60,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     }
   };
 
-  const handleReset = () => {
-    setTitle('');
-    setNote('');
-    setPendingMainGoal(null);
-    setIsPacingOpen(false);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !metricId) return;
-
-    const mainGoal = {
+    if (!title.trim() || !metricId || conflict) return;
+    onSave({
+      id: goalToEdit?.id,
       title: title.trim(),
       metricId,
       targetValue: parseFloat(targetValue) || 1,
@@ -83,65 +72,30 @@ export const GoalModal: React.FC<GoalModalProps> = ({
       startDate,
       endDate,
       note: note.trim() || undefined,
-    };
-
-    // If goal is yearly or monthly, prompt user with PacingBreakdownModal
-    if (period === 'year' || period === 'month') {
-      setPendingMainGoal(mainGoal);
-      setIsPacingOpen(true);
-      return;
-    }
-
-    onSave(mainGoal);
-    handleReset();
-    onClose();
-  };
-
-  const handlePacingConfirm = (subgoals: PacingSubgoal[]) => {
-    if (!pendingMainGoal) return;
-
-    const generatedSubgoals = subgoals.map((sg) => {
-      let sDate = today;
-      let eDate = today;
-      if (sg.period === 'month') {
-        const m = getMonthRange(today);
-        sDate = m.start;
-        eDate = m.end;
-      } else if (sg.period === 'week') {
-        const w = getWeekRange(today);
-        sDate = w.start;
-        eDate = w.end;
-      }
-
-      return {
-        title: sg.title,
-        metricId: pendingMainGoal.metricId,
-        targetValue: sg.targetValue,
-        period: sg.period,
-        startDate: sDate,
-        endDate: eDate,
-        note: `Auto-generated pacing breakdown according to "${pendingMainGoal.title}"`,
-      };
     });
-
-    onSave(pendingMainGoal, generatedSubgoals);
-    handleReset();
     onClose();
   };
 
-  const handlePacingSkip = () => {
-    if (pendingMainGoal) {
-      onSave(pendingMainGoal);
-    }
-    handleReset();
-    onClose();
+  // Rough even split for the preview; the live cascade adapts to actual progress.
+  const target = parseFloat(targetValue) || 0;
+  const goalDays = Math.max(1, getDaysList(startDate, endDate).length);
+  const perDay = target / goalDays;
+  const fmt = (n: number) => {
+    if (!selectedMetric) return String(Math.round(n * 10) / 10);
+    if (selectedMetric.type === 'duration') return formatMetricValue(n * 60, selectedMetric);
+    return formatMetricValue(Math.round(n * 10) / 10, selectedMetric, settings.currencySymbol);
   };
+  const preview = [
+    goalDays > 31 && `${fmt(perDay * 30.44)} / month`,
+    goalDays > 7 && `${fmt(perDay * 7)} / week`,
+    goalDays > 1 && `${fmt(perDay)} / day`,
+  ].filter(Boolean);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">Create Goal</h3>
+          <h3 className="modal-title">{goalToEdit ? 'Edit Goal' : 'Create Goal'}</h3>
           <button className="icon-btn" onClick={onClose}>
             <X size={18} />
           </button>
@@ -153,7 +107,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             <input
               type="text"
               className="form-input"
-              placeholder="e.g. Ship 3 meaningful things this week"
+              placeholder="e.g. Earn 1 crore this year"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -175,6 +129,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 </option>
               ))}
             </select>
+            {conflict && (
+              <p style={{ fontSize: '0.78rem', color: '#f87171', margin: '6px 0 0' }}>
+                This metric already has the goal "{conflict.title}" for these dates. Pick another metric or change the dates.
+              </p>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -184,7 +143,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 type="number"
                 step="any"
                 className="form-input"
-                placeholder="e.g. 3"
+                placeholder="e.g. 10000000"
                 value={targetValue}
                 onChange={(e) => setTargetValue(e.target.value)}
                 required
@@ -198,9 +157,9 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 value={period}
                 onChange={(e) => handlePeriodChange(e.target.value as TargetPeriod)}
               >
-                <option value="week">Weekly</option>
-                <option value="month">Monthly</option>
                 <option value="year">Annual</option>
+                <option value="month">Monthly</option>
+                <option value="week">Weekly</option>
               </select>
             </div>
           </div>
@@ -229,6 +188,12 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             </div>
           </div>
 
+          {target > 0 && preview.length > 0 && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              Breaks down to about {preview.join(' · ')}. Targets adjust automatically if you fall behind or get ahead.
+            </p>
+          )}
+
           <div className="form-group">
             <label className="form-label">Notes & Explanation (Optional)</label>
             <textarea
@@ -248,7 +213,8 @@ export const GoalModal: React.FC<GoalModalProps> = ({
             <button
               type="submit"
               className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 7 }}
+              disabled={Boolean(conflict)}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, opacity: conflict ? 0.5 : 1 }}
             >
               <Check size={15} />
               <span>Save Goal</span>
@@ -259,19 +225,6 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           </div>
         </form>
       </div>
-
-      {pendingMainGoal && (
-        <PacingBreakdownModal
-          isOpen={isPacingOpen}
-          parentGoalTitle={pendingMainGoal.title}
-          parentTargetValue={pendingMainGoal.targetValue}
-          parentPeriod={pendingMainGoal.period}
-          unit={selectedMetric?.unit || (selectedMetric?.type === 'duration' ? 'hrs' : 'items')}
-          onConfirm={handlePacingConfirm}
-          onSkip={handlePacingSkip}
-          onClose={() => setIsPacingOpen(false)}
-        />
-      )}
     </div>
   );
 };

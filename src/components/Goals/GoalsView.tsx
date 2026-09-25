@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { Plus, Target, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
+import { Plus, Target, Trash2, Calendar, CheckCircle2, Pencil } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
-import { calculateGoalProgress } from '../../utils/aggregation';
+import { calculateGoalProgress, computeGoalCascade } from '../../utils/aggregation';
 import { GoalModal } from './GoalModal';
+import { Goal } from '../../types';
 
 export const GoalsView: React.FC = () => {
   const { goals, metrics, database, saveGoal, deleteGoal, settings } = useTracker();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   const entries = database?.entries || [];
 
   const goalItems = goals.map((g) => {
     const metric = metrics.find((m) => m.id === g.metricId);
     const progress = calculateGoalProgress(g, metric, entries, settings.currencySymbol);
+    const cascade = metric ? computeGoalCascade(g, metric, entries, settings.currencySymbol) : [];
     return {
       goal: g,
       metric,
       progress,
+      cascade,
     };
   });
 
@@ -31,7 +35,7 @@ export const GoalsView: React.FC = () => {
 
           <button
             className="btn-primary"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => { setEditingGoal(null); setIsModalOpen(true); }}
             style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '7px 14px' }}
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -54,7 +58,7 @@ export const GoalsView: React.FC = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-            {goalItems.map(({ goal, metric, progress }) => (
+            {goalItems.map(({ goal, metric, progress, cascade }) => (
               <div
                 key={goal.id}
                 style={{
@@ -151,6 +155,24 @@ export const GoalsView: React.FC = () => {
                         }}
                       />
                     </div>
+
+                    {cascade.length > 0 && !progress.isCompleted && (
+                      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {cascade.map((level) => (
+                          <div key={level.period}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                              <span style={{ color: 'var(--text-muted)' }}>{level.label}</span>
+                              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                                {level.formattedCurrent} / {level.formattedTarget}
+                              </span>
+                            </div>
+                            <div className="progress-bar-track" style={{ height: 3, marginTop: 4 }}>
+                              <div className="progress-bar-fill" style={{ width: `${level.progressPercent}%`, background: '#a1a1aa' }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -169,6 +191,18 @@ export const GoalsView: React.FC = () => {
                     <span>Deadline: {goal.endDate}</span>
                   </div>
 
+                  <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    className="icon-btn"
+                    onClick={() => {
+                      setEditingGoal(goal);
+                      setIsModalOpen(true);
+                    }}
+                    title="Edit goal"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button
                     className="icon-btn"
                     onClick={() => {
@@ -181,6 +215,7 @@ export const GoalsView: React.FC = () => {
                   >
                     <Trash2 size={14} />
                   </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -188,19 +223,15 @@ export const GoalsView: React.FC = () => {
         )}
       </div>
 
-      <GoalModal
-        isOpen={isModalOpen}
-        metrics={metrics}
-        onClose={() => setIsModalOpen(false)}
-        onSave={async (saved, subgoals) => {
-          await saveGoal(saved);
-          if (subgoals && subgoals.length > 0) {
-            for (const sg of subgoals) {
-              await saveGoal(sg);
-            }
-          }
-        }}
-      />
+      {isModalOpen && (
+        <GoalModal
+          isOpen
+          metrics={metrics}
+          goalToEdit={editingGoal}
+          onClose={() => setIsModalOpen(false)}
+          onSave={saveGoal}
+        />
+      )}
     </div>
   );
 };

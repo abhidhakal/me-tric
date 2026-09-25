@@ -17,7 +17,7 @@ import {
 import { TrackerApi } from './api';
 import { MacDiskStorageAdapter } from './storage';
 import { createBlankDatabase, createInitialDatabase } from '../utils/sampleData';
-import { computeDashboard, computeReviewStats } from '../utils/aggregation';
+import { applyGoalTargets, computeDashboard, computeReviewStats } from '../utils/aggregation';
 
 export class LocalTrackerApi implements TrackerApi {
   private db: AppDatabase;
@@ -34,6 +34,14 @@ export class LocalTrackerApi implements TrackerApi {
     }
 
     if (!this.db.reminders) this.db.reminders = [];
+
+    // Drop sub-goals the old pacing modal copied out of a parent goal; the cascade is computed live now.
+    const isPacedCopy = (g: Goal) =>
+      g.note?.startsWith('Auto-generated pacing breakdown') || g.note?.startsWith('Paced from ');
+    if (this.db.goals.some(isPacedCopy)) {
+      this.db.goals = this.db.goals.filter((g) => !isPacedCopy(g));
+      await MacDiskStorageAdapter.save(this.db);
+    }
 
     this.isInitialized = true;
     return this.db;
@@ -154,7 +162,7 @@ export class LocalTrackerApi implements TrackerApi {
 
     // Add any configured goals
     if (data.goals && data.goals.length > 0) {
-      this.db.goals = [...data.goals];
+      this.db.goals = [...this.db.goals, ...data.goals];
     }
 
     await MacDiskStorageAdapter.save(this.db);
@@ -382,7 +390,7 @@ export class LocalTrackerApi implements TrackerApi {
   }> {
     await this.ensureLoaded();
     return computeDashboard(
-      this.db.metrics,
+      applyGoalTargets(this.db.metrics, this.db.goals, referenceDate),
       this.db.entries,
       period,
       referenceDate,
@@ -398,7 +406,7 @@ export class LocalTrackerApi implements TrackerApi {
   ): Promise<ReviewComputedStats> {
     await this.ensureLoaded();
     return computeReviewStats(
-      this.db.metrics,
+      applyGoalTargets(this.db.metrics, this.db.goals, endDate),
       this.db.entries,
       this.db.events,
       periodType,

@@ -15,9 +15,10 @@ import {
 import { useTracker } from '../../context/TrackerContext';
 import { Metric } from '../../types';
 import { MetricModal } from './MetricModal';
+import { getActiveGoal } from '../../utils/aggregation';
 
 export const MetricsView: React.FC = () => {
-  const { metrics, saveMetric, deleteMetric } = useTracker();
+  const { metrics, goals, saveMetric, deleteMetric } = useTracker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMetric, setEditingMetric] = useState<Metric | null>(null);
   const [metricToDelete, setMetricToDelete] = useState<Metric | null>(null);
@@ -181,6 +182,7 @@ export const MetricsView: React.FC = () => {
               const typeInfo = getTypeBadge(m.type);
               const steppers = getSteppersPreview(m);
               const isEnabled = m.enabled !== false;
+              const activeGoal = getActiveGoal(m.id, goals);
 
               return (
                 <div
@@ -280,7 +282,11 @@ export const MetricsView: React.FC = () => {
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Target Cadence
                         </span>
-                        {m.targetValue ? (
+                        {activeGoal ? (
+                          <span style={{ fontWeight: 700, color: '#ffffff' }}>
+                            From goal <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>· {activeGoal.title}</span>
+                          </span>
+                        ) : m.targetValue ? (
                           <span style={{ fontWeight: 700, color: '#ffffff' }}>
                             {m.targetValue} {m.unit || ''} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/ {m.targetPeriod}</span>
                           </span>
@@ -383,6 +389,7 @@ export const MetricsView: React.FC = () => {
       <MetricModal
         isOpen={isModalOpen}
         metricToEdit={editingMetric}
+        goalTitle={editingMetric ? getActiveGoal(editingMetric.id, goals)?.title : undefined}
         onClose={() => setIsModalOpen(false)}
         onSave={(saved) => saveMetric(saved)}
       />

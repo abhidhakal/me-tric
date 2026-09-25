@@ -4,7 +4,6 @@ import confetti from 'canvas-confetti';
 import { useTracker } from '../../context/TrackerContext';
 import { MetricType, MetricCategory, TargetPeriod, Goal } from '../../types';
 import { getTodayIso, getWeekRange, getMonthRange, getYearRange } from '../../utils/dateUtils';
-import { PacingBreakdownModal, PacingSubgoal } from '../Common/PacingBreakdownModal';
 
 interface UserDefinedGoal {
   id: string;
@@ -41,8 +40,6 @@ export const OnboardingScreen: React.FC = () => {
   const [goalUnit, setGoalUnit] = useState('hrs');
   const [goalPeriod, setGoalPeriod] = useState<TargetPeriod>('year');
   const [goalNote, setGoalNote] = useState('');
-  const [pendingPacingGoal, setPendingPacingGoal] = useState<UserDefinedGoal | null>(null);
-  const [isPacingModalOpen, setIsPacingModalOpen] = useState(false);
 
   // Step 3: Metrics
   const [enabledMetricIds, setEnabledMetricIds] = useState<string[]>([]);
@@ -103,46 +100,7 @@ export const OnboardingScreen: React.FC = () => {
       note: goalNote.trim() || undefined,
     };
 
-    if (goalPeriod === 'year' || goalPeriod === 'month') {
-      setPendingPacingGoal(newGoal);
-      setIsPacingModalOpen(true);
-      return;
-    }
-
     setUserGoals((prev) => [...prev, newGoal]);
-    setGoalTitle('');
-    setGoalTarget('');
-    setGoalNote('');
-  };
-
-  const handlePacingConfirm = (subgoals: PacingSubgoal[]) => {
-    if (!pendingPacingGoal) return;
-    const createdSubgoals: UserDefinedGoal[] = subgoals.map((sg) => ({
-      id: `goal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      title: sg.title,
-      targetValue: sg.targetValue,
-      unit: pendingPacingGoal.unit,
-      period: sg.period,
-      metricName: pendingPacingGoal.metricName,
-      category: pendingPacingGoal.category,
-      metricType: pendingPacingGoal.metricType,
-      note: `Paced from ${pendingPacingGoal.title}`,
-    }));
-
-    setUserGoals((prev) => [...prev, pendingPacingGoal, ...createdSubgoals]);
-    setPendingPacingGoal(null);
-    setIsPacingModalOpen(false);
-    setGoalTitle('');
-    setGoalTarget('');
-    setGoalNote('');
-  };
-
-  const handlePacingSkip = () => {
-    if (pendingPacingGoal) {
-      setUserGoals((prev) => [...prev, pendingPacingGoal]);
-    }
-    setPendingPacingGoal(null);
-    setIsPacingModalOpen(false);
     setGoalTitle('');
     setGoalTarget('');
     setGoalNote('');
@@ -192,8 +150,6 @@ export const OnboardingScreen: React.FC = () => {
           type: ug.metricType,
           category: ug.category,
           unit: ug.unit,
-          targetValue: ug.targetValue,
-          targetPeriod: ug.period,
           color: '#ffffff',
           enabled: true,
         })) as any;
@@ -251,8 +207,6 @@ export const OnboardingScreen: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isPacingModalOpen) return;
-
       if (e.key === 'Enter') {
         const target = e.target as HTMLElement;
         const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
@@ -278,7 +232,7 @@ export const OnboardingScreen: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [step, goalTitle, newMetricName, name, occupation, currency, userGoals, enabledMetricIds, metrics, isPacingModalOpen]);
+  }, [step, goalTitle, newMetricName, name, occupation, currency, userGoals, enabledMetricIds, metrics]);
 
   const isExistingProfile = Boolean(profile?.onboardingCompleted);
 
@@ -680,19 +634,6 @@ export const OnboardingScreen: React.FC = () => {
           )}
         </div>
       </div>
-
-      {pendingPacingGoal && (
-        <PacingBreakdownModal
-          isOpen={isPacingModalOpen}
-          parentGoalTitle={pendingPacingGoal.title}
-          parentTargetValue={pendingPacingGoal.targetValue}
-          parentPeriod={pendingPacingGoal.period}
-          unit={pendingPacingGoal.unit}
-          onConfirm={handlePacingConfirm}
-          onSkip={handlePacingSkip}
-          onClose={() => setIsPacingModalOpen(false)}
-        />
-      )}
     </div>
   );
 };

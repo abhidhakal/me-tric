@@ -5,6 +5,7 @@ import { Metric, MetricCategory, MetricType, TargetPeriod } from '../../types';
 interface MetricModalProps {
   isOpen: boolean;
   metricToEdit?: Metric | null;
+  goalTitle?: string; // Set when an active goal drives this metric's target
   onClose: () => void;
   onSave: (metric: Omit<Metric, 'id' | 'createdAt'> & { id?: string }) => void;
 }
@@ -12,6 +13,7 @@ interface MetricModalProps {
 export const MetricModal: React.FC<MetricModalProps> = ({
   isOpen,
   metricToEdit,
+  goalTitle,
   onClose,
   onSave,
 }) => {
@@ -127,6 +129,11 @@ export const MetricModal: React.FC<MetricModalProps> = ({
             </div>
           </div>
 
+          {goalTitle ? (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+              Target comes from the goal "{goalTitle}". Edit or delete the goal to change it.
+            </p>
+          ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Target Value (Optional)</label>
@@ -156,6 +163,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
               </select>
             </div>
           </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Unit Label (Optional)</label>
