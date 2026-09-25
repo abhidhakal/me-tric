@@ -181,10 +181,13 @@ export class LocalTrackerApi implements TrackerApi {
     const isNew = !metric.id;
     const now = new Date().toISOString();
     const id = metric.id || `metric-${Date.now()}`;
+    const existing = this.db.metrics.find((m) => m.id === id);
+    // Merge so fields the edit form doesn't send (enabled, icon, quick-log flag) survive an edit.
     const fullMetric: Metric = {
+      ...existing,
       ...metric,
       id,
-      createdAt: isNew ? now : (this.db.metrics.find((m) => m.id === id)?.createdAt || now),
+      createdAt: isNew ? now : (existing?.createdAt || now),
     };
 
     if (isNew) {
