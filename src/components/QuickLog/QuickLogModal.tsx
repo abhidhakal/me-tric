@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, Clock, Dumbbell, BookOpen, CreditCard, Sparkles, FileText } from 'lucide-react';
+import { X, Check, Clock, Dumbbell, BookOpen, CreditCard, Sparkles } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 import { parseDurationInput, formatDuration } from '../../utils/formatters';
 
-type QuickTargetType = 'metric' | 'event' | 'note';
+type QuickTargetType = 'metric' | 'event';
 
 interface QuickOption {
   id: string;
@@ -22,8 +22,6 @@ export const QuickLogModal: React.FC = () => {
     preselectedMetricId,
     logMetric,
     logEvent,
-    saveNote,
-    todayNote,
     activeDate
   } = useTracker();
 
@@ -33,7 +31,6 @@ export const QuickLogModal: React.FC = () => {
   const [numberInput, setNumberInput] = useState<string>('');
   const [eventTitle, setEventTitle] = useState<string>('');
   const [eventDesc, setEventDesc] = useState<string>('');
-  const [noteText, setNoteText] = useState<string>('');
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
@@ -48,7 +45,7 @@ export const QuickLogModal: React.FC = () => {
     }
   }
 
-  // Build the list of quick options: top metrics + Event + Note
+  // Build the list of quick options: top metrics + Event
   const quickOptions: QuickOption[] = [
     ...displayMetrics.map((m, idx) => {
       let icon = <Clock size={18} />;
@@ -74,13 +71,6 @@ export const QuickLogModal: React.FC = () => {
       title: 'Event / Milestone',
       icon: <Sparkles size={18} />,
       shortcut: '5',
-    },
-    {
-      id: 'opt-note',
-      type: 'note',
-      title: 'Daily Note',
-      icon: <FileText size={18} />,
-      shortcut: '6',
     },
   ];
 
@@ -113,7 +103,7 @@ export const QuickLogModal: React.FC = () => {
 
     const handleKey = (e: KeyboardEvent) => {
       const isTyping = document.activeElement === inputRef.current;
-      if (!isTyping && ['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+      if (!isTyping && ['1', '2', '3', '4', '5'].includes(e.key)) {
         const num = parseInt(e.key, 10);
         const opt = quickOptions[num - 1];
         if (opt) {
@@ -130,9 +120,6 @@ export const QuickLogModal: React.FC = () => {
   const selectOption = (opt: QuickOption) => {
     setSelectedOption(opt);
     resetFields();
-    if (opt.type === 'note' && todayNote) {
-      setNoteText(todayNote.content);
-    }
   };
 
   const resetFields = () => {
@@ -141,7 +128,6 @@ export const QuickLogModal: React.FC = () => {
     setNumberInput('');
     setEventTitle('');
     setEventDesc('');
-    setNoteText('');
   };
 
   if (!isQuickLogOpen) return null;
@@ -171,8 +157,6 @@ export const QuickLogModal: React.FC = () => {
     } else if (selectedOption.type === 'event') {
       if (!eventTitle.trim()) return;
       await logEvent(eventTitle.trim(), eventDesc.trim() || undefined);
-    } else if (selectedOption.type === 'note') {
-      await saveNote(noteText.trim());
     }
 
     closeQuickLog();
@@ -347,21 +331,6 @@ export const QuickLogModal: React.FC = () => {
                 />
               </div>
             </>
-          )}
-
-          {selectedOption?.type === 'note' && (
-            <div className="form-group">
-              <label className="form-label">Daily Reflection / Note</label>
-              <textarea
-                ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                className="form-textarea"
-                rows={4}
-                placeholder="Good day. Got most important work done..."
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                autoFocus
-              />
-            </div>
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>

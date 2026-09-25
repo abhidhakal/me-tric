@@ -172,18 +172,6 @@ export function createInitialDatabase(): AppDatabase {
         createdAt: monday,
       },
     ],
-    notes: [
-      {
-        date: tuesday,
-        content: 'Good day. Got most important work done.',
-        updatedAt: tuesday,
-      },
-      {
-        date: monday,
-        content: 'Strong start to the week. High focus in the morning.',
-        updatedAt: monday,
-      },
-    ],
     goals: [
       {
         id: 'goal-1',
@@ -309,7 +297,6 @@ export function createBlankDatabase(): AppDatabase {
     ],
     entries: [],
     events: [],
-    notes: [],
     goals: [],
     reviews: [],
   };

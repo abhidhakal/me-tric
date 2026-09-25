@@ -45,12 +45,6 @@ export interface LifeEvent {
   createdAt: string;
 }
 
-export interface DailyNote {
-  date: string;            // YYYY-MM-DD
-  content: string;
-  updatedAt: string;
-}
-
 export interface Goal {
   id: string;
   title: string;
@@ -159,7 +153,6 @@ export interface AppDatabase {
   metrics: Metric[];
   entries: MetricEntry[];
   events: LifeEvent[];
-  notes: DailyNote[];
   goals: Goal[];
   reviews: Review[];
   plans?: TomorrowPlan[];

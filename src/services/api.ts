@@ -2,7 +2,6 @@ import {
   Metric,
   MetricEntry,
   LifeEvent,
-  DailyNote,
   Goal,
   Review,
   TomorrowPlan,
@@ -52,10 +51,6 @@ export interface TrackerApi {
   getEventsForDate(date: string): Promise<LifeEvent[]>;
   logEvent(event: { title: string; date: string; description?: string; category?: string }): Promise<LifeEvent>;
   deleteEvent(eventId: string): Promise<boolean>;
-
-  // Daily Notes
-  getDailyNote(date: string): Promise<DailyNote | null>;
-  saveDailyNote(date: string, content: string): Promise<DailyNote>;
 
   // Plans for Tomorrow / Daily Planning & Reminders
   getPlansForDate(date: string): Promise<TomorrowPlan[]>;

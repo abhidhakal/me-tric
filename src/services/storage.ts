@@ -135,7 +135,6 @@ export class MacDiskStorageAdapter {
         metrics: [],
         entries: [],
         events: [],
-        notes: [],
         goals: [],
         reviews: [],
       };

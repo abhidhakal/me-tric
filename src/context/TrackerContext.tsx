@@ -3,7 +3,6 @@ import {
   Metric,
   MetricEntry,
   LifeEvent,
-  DailyNote,
   Goal,
   Review,
   TomorrowPlan,
@@ -51,7 +50,6 @@ interface TrackerContextType {
   metrics: Metric[];
   todayEntries: MetricEntry[];
   todayEvents: LifeEvent[];
-  todayNote: DailyNote | null;
   goals: Goal[];
   tomorrowPlans: TomorrowPlan[];
   activePlans: TomorrowPlan[];
@@ -67,7 +65,6 @@ interface TrackerContextType {
   toggleActivityTracking: (enabled?: boolean) => Promise<boolean>;
   logMetric: (metricId: string, value: number, note?: string) => Promise<void>;
   logEvent: (title: string, description?: string, category?: string) => Promise<void>;
-  saveNote: (content: string) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   addPlan: (title: string, date?: string, time?: string, datetime?: string) => Promise<void>;
@@ -107,7 +104,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [todayEntries, setTodayEntries] = useState<MetricEntry[]>([]);
   const [todayEvents, setTodayEvents] = useState<LifeEvent[]>([]);
-  const [todayNote, setTodayNote] = useState<DailyNote | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [tomorrowPlans, setTomorrowPlans] = useState<TomorrowPlan[]>([]);
   const [activePlans, setActivePlans] = useState<TomorrowPlan[]>([]);
@@ -170,9 +166,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const events = await localApi.getEventsForDate(activeDate);
       setTodayEvents(events);
-
-      const note = await localApi.getDailyNote(activeDate);
-      setTodayNote(note);
 
       const tomorrowDate = shiftDate(activeDate, 1);
       const plansForTomorrow = await localApi.getPlansForDate(tomorrowDate);
@@ -268,12 +261,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
       date: activeDate,
     });
     showToast(`Added highlight: "${title}"`);
-    await refreshData();
-  };
-
-  const saveNote = async (content: string) => {
-    await localApi.saveDailyNote(activeDate, content);
-    showToast('Daily note saved');
     await refreshData();
   };
 
@@ -519,7 +506,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         metrics,
         todayEntries,
         todayEvents,
-        todayNote,
         goals,
         tomorrowPlans,
         activePlans,
@@ -533,7 +519,6 @@ export const TrackerProvider: React.FC<{ children: ReactNode }> = ({ children })
         toggleActivityTracking,
         logMetric,
         logEvent,
-        saveNote,
         deleteEntry,
         deleteEvent,
         addPlan,

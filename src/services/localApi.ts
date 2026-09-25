@@ -5,7 +5,6 @@ import {
   Metric,
   MetricEntry,
   LifeEvent,
-  DailyNote,
   Goal,
   Review,
   TomorrowPlan,
@@ -284,30 +283,6 @@ export class LocalTrackerApi implements TrackerApi {
     this.db.events = this.db.events.filter((e) => e.id !== eventId);
     await MacDiskStorageAdapter.save(this.db);
     return true;
-  }
-
-  // --- Daily Notes ---
-
-  async getDailyNote(date: string): Promise<DailyNote | null> {
-    await this.ensureLoaded();
-    return this.db.notes.find((n) => n.date === date) || null;
-  }
-
-  async saveDailyNote(date: string, content: string): Promise<DailyNote> {
-    await this.ensureLoaded();
-    const existing = this.db.notes.find((n) => n.date === date);
-    const now = new Date().toISOString();
-    if (existing) {
-      existing.content = content;
-      existing.updatedAt = now;
-      await MacDiskStorageAdapter.save(this.db);
-      return existing;
-    } else {
-      const newNote: DailyNote = { date, content, updatedAt: now };
-      this.db.notes.push(newNote);
-      await MacDiskStorageAdapter.save(this.db);
-      return newNote;
-    }
   }
 
   // --- Plans for Tomorrow / Daily Planning & Reminders ---
