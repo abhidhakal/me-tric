@@ -16,6 +16,7 @@ declare global {
       showNotification?: (title: string, body: string) => Promise<boolean>;
       openNotificationSettings?: () => Promise<boolean>;
       openMainWindow?: () => Promise<boolean>;
+      quitApp?: () => Promise<void>;
       hideTrayPopover?: () => Promise<boolean>;
       cancelDownload?: () => Promise<boolean>;
       onTrayShown?: (callback: () => void) => () => void;
@@ -32,6 +33,19 @@ export class MacDiskStorageAdapter {
       // 1. If running inside native Electron on Mac, read from real filesystem
       if (typeof window !== 'undefined' && window.electronAPI?.loadDatabase) {
         const diskData = await window.electronAPI.loadDatabase();
+
+        // One-time recovery: a broken dev preload made Electron save to localStorage instead of disk.
+        // Move that data to disk, keeping the old disk copy in localStorage just in case.
+        const stranded = localStorage.getItem(STORAGE_KEY);
+        if (stranded) {
+          const recovered = JSON.parse(stranded) as AppDatabase;
+          if (diskData) localStorage.setItem('metric_disk_before_recovery', JSON.stringify(diskData));
+          await window.electronAPI.saveDatabase(recovered);
+          localStorage.removeItem(STORAGE_KEY);
+          this.cachedDb = recovered;
+          return recovered;
+        }
+
         if (diskData && diskData.metrics && Array.isArray(diskData.entries)) {
           this.cachedDb = diskData;
           return diskData;

@@ -15,12 +15,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getActivityStatus: () => ipcRenderer.invoke('activity:getStatus'),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: (url: string) => ipcRenderer.invoke('updater:download', url),
+  cancelDownload: () => ipcRenderer.invoke('updater:cancel'),
   installUpdate: (customPath?: string) => ipcRenderer.invoke('updater:install', customPath),
   onUpdateProgress: (callback: (progress: any) => void) => {
     ipcRenderer.on('updater:progress', (_, p) => callback(p));
   },
   onUpdateAvailable: (callback: (info: any) => void) => {
     ipcRenderer.on('updater:available', (_, i) => callback(i));
+  },
+  onMenuAction: (callback: (action: string) => void) => {
+    const handler = (_: unknown, action: string) => callback(action);
+    ipcRenderer.on('menu:action', handler);
+    return () => ipcRenderer.removeListener('menu:action', handler);
+  },
+  openMainWindow: () => ipcRenderer.invoke('app:openMainWindow'),
+  quitApp: () => ipcRenderer.invoke('app:quit'),
+  hideTrayPopover: () => ipcRenderer.invoke('tray:hide'),
+  onTrayShown: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('tray:shown', handler);
+    return () => ipcRenderer.removeListener('tray:shown', handler);
   },
   onOpenUpdateModal: (callback: () => void) => {
     ipcRenderer.on('updater:open-modal', () => callback());
