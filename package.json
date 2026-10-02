@@ -4,7 +4,7 @@
   "description": "Personal productivity and metric tracking desktop application",
   "author": "Abhinav Dhakal",
   "private": true,
-  "version": "1.0.13",
+  "version": "1.1.0",
   "license": "MIT",
   "main": "dist-electron/main.js",
   "type": "module",
@@ -13,11 +13,12 @@
     "dev:electron": "ELECTRON=true vite",
     "build": "tsc -b && vite build",
     "generate:icons": "node scripts/generate-icons.cjs",
+    "build:widgets": "bash native/MeTricWidgets/build.sh",
     "build:electron": "tsc -b && ELECTRON=true vite build",
-    "build:app": "npm run build:electron && electron-builder --mac dir --arm64 && codesign --force --deep --sign - release/mac-arm64/MeTric.app",
-    "build:dmg": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --x64 --publish never",
-    "build:dmg:arm64": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --publish never",
-    "build:dmg:x64": "node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --x64 --publish never",
+    "build:app": "npm run build:widgets && npm run build:electron && electron-builder --mac dir --arm64",
+    "build:dmg": "npm run build:widgets && node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --x64 --publish never",
+    "build:dmg:arm64": "npm run build:widgets && node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --arm64 --publish never",
+    "build:dmg:x64": "npm run build:widgets && node scripts/generate-dmg-background.cjs && npm run build:electron && electron-builder --mac dmg --x64 --publish never",
     "build:win": "npm run build:electron && electron-builder --win nsis --x64 --publish never",
     "build:all": "npm run build:dmg && npm run build:win",
     "start": "npx electron dist-electron/main.js",
@@ -27,6 +28,7 @@
   "build": {
     "appId": "com.abhinav.metric",
     "productName": "MeTric",
+    "afterPack": "scripts/after-pack.cjs",
     "directories": {
       "output": "release"
     },
@@ -42,7 +44,7 @@
       "identity": "-",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "artifactName": "${productName}-${arch}.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -78,7 +80,7 @@
     },
     "win": {
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-Windows-Setup.${ext}",
+      "artifactName": "${productName}-Windows-Setup.${ext}",
       "target": [
         {
           "target": "nsis",

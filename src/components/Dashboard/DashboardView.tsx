@@ -112,10 +112,11 @@ export const DashboardView: React.FC = () => {
                 key={p}
                 className="chip-btn"
                 style={{
-                  background: period === p ? '#ffffff' : 'transparent',
-                  color: period === p ? '#000000' : 'var(--text-secondary)',
-                  borderColor: period === p ? '#ffffff' : 'transparent',
-                  fontWeight: period === p ? 700 : 500,
+                  background: period === p ? 'rgba(255, 255, 255, 0.16)' : 'transparent',
+                  color: period === p ? '#ffffff' : 'var(--text-secondary)',
+                  borderColor: period === p ? 'rgba(255, 255, 255, 0.25)' : 'transparent',
+                  boxShadow: period === p ? '0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.25)' : 'none',
+                  fontWeight: period === p ? 600 : 500,
                   fontSize: 'var(--fs-caption)',
                   padding: '5px 12px',
                   textTransform: 'capitalize',
@@ -399,7 +400,7 @@ export const DashboardView: React.FC = () => {
                               ? 'linear-gradient(90deg, #10b981, #34d399)'
                               : barColor(rollup) === 'over'
                               ? 'linear-gradient(90deg, #dc2626, #f87171)'
-                              : 'linear-gradient(90deg, #71717a, #ffffff)',
+                              : 'linear-gradient(90deg, rgba(255, 255, 255, 0.5), #ffffff)',
                           }}
                         />
                       </div>

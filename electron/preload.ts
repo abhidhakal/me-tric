@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openMainWindow: () => ipcRenderer.invoke('app:openMainWindow'),
   quitApp: () => ipcRenderer.invoke('app:quit'),
   hideTrayPopover: () => ipcRenderer.invoke('tray:hide'),
+  setTrayTitle: (title: string) => ipcRenderer.invoke('tray:setTitle', title),
   onTrayShown: (callback: () => void) => {
     const handler = () => callback();
     ipcRenderer.on('tray:shown', handler);
@@ -39,5 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onOpenUpdateModal: (callback: () => void) => {
     ipcRenderer.on('updater:open-modal', () => callback());
   },
+  syncWidgetData: (payload: any) => ipcRenderer.invoke('widget:sync', payload),
   isElectron: true,
 });

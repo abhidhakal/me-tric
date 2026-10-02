@@ -6,6 +6,7 @@ import { DashboardView } from '../Dashboard/DashboardView';
 import { PlanView } from '../Plan/PlanView';
 import { ReviewsView } from '../Reviews/ReviewsView';
 import { QuickLogModal } from '../QuickLog/QuickLogModal';
+import { FocusRecapModal } from '../Focus/FocusRecapModal';
 import { OnboardingScreen } from '../Onboarding/OnboardingScreen';
 import { ToastContainer } from '../Common/ToastContainer';
 import { useTracker, ActiveTab } from '../../context/TrackerContext';
@@ -52,6 +53,7 @@ export const AppLayout: React.FC = () => {
       </div>
 
       <QuickLogModal />
+      <FocusRecapModal />
       <ToastContainer />
     </div>
   );

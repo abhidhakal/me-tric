@@ -84,68 +84,70 @@ export const Sidebar: React.FC = () => {
   }, [setActiveTab, openQuickLog, toggleCollapsed]);
 
   return (
-    <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
-      <div className="sidebar-topbar">
-        {!collapsed && (
-          <>
-            <span className="brand-title">MeTric</span>
-            <button className="sidebar-toggle" onClick={toggleCollapsed} title="Collapse sidebar (⌘\)" aria-label="Collapse sidebar">
-              <PanelLeftClose size={16} />
-            </button>
-          </>
-        )}
-      </div>
+    <>
+      <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
+        <div className="sidebar-topbar">
+          {!collapsed && (
+            <>
+              <span className="brand-title">MeTric</span>
+              <button className="sidebar-toggle" onClick={toggleCollapsed} title="Collapse sidebar (⌘\)" aria-label="Collapse sidebar">
+                <PanelLeftClose size={16} />
+              </button>
+            </>
+          )}
+        </div>
 
-      <div className="sidebar-body">
-        {profile && (
-          <button className="profile-row" onClick={() => setIsProfileOpen(true)} title="Edit profile" aria-label="Edit profile">
-            <span className="profile-avatar">{initials(profile.name)}</span>
-            {!collapsed && (
-              <span className="profile-text">
-                <span className="profile-name">{profile.name || 'Your profile'}</span>
-                {profile.occupation && <span className="profile-role">{profile.occupation}</span>}
-              </span>
-            )}
-          </button>
-        )}
-
-        <nav className="nav-section">
-          {collapsed && (
-            <button className="nav-item" onClick={toggleCollapsed} title="Expand sidebar (⌘\)" aria-label="Expand sidebar">
-              <div className="nav-item-left">
-                <PanelLeftOpen size={17} />
-              </div>
+        <div className="sidebar-body">
+          {profile && (
+            <button className="profile-row" onClick={() => setIsProfileOpen(true)} title="Edit profile" aria-label="Edit profile">
+              <span className="profile-avatar">{initials(profile.name)}</span>
+              {!collapsed && (
+                <span className="profile-text">
+                  <span className="profile-name">{profile.name || 'Your profile'}</span>
+                  {profile.occupation && <span className="profile-role">{profile.occupation}</span>}
+                </span>
+              )}
             </button>
           )}
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
-              title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
-              aria-label={item.label}
-            >
-              <div className="nav-item-left">
-                {item.icon}
-                {!collapsed && <span>{item.label}</span>}
-              </div>
-              {!collapsed && <span className="nav-shortcut">{item.shortcut}</span>}
-            </button>
-          ))}
-        </nav>
 
-        <div className="sidebar-footer">
-          <button className="nav-item" onClick={() => setIsSettingsOpen(true)} title="Settings (⌘,)" aria-label="Settings">
-            <div className="nav-item-left">
-              <Settings size={17} />
-              {!collapsed && <span>Settings</span>}
-            </div>
-            {availableUpdate && (
-              <span className="update-dot" title={`Update v${availableUpdate.latestVersion} available`} />
+          <nav className="nav-section">
+            {collapsed && (
+              <button className="nav-item" onClick={toggleCollapsed} title="Expand sidebar (⌘\)" aria-label="Expand sidebar">
+                <div className="nav-item-left">
+                  <PanelLeftOpen size={17} />
+                </div>
+              </button>
             )}
-          </button>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.id)}
+                title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
+                aria-label={item.label}
+              >
+                <div className="nav-item-left">
+                  {item.icon}
+                  {!collapsed && <span>{item.label}</span>}
+                </div>
+                {!collapsed && <span className="nav-shortcut">{item.shortcut}</span>}
+              </button>
+            ))}
+          </nav>
+
+          <div className="sidebar-footer">
+            <button className="nav-item" onClick={() => setIsSettingsOpen(true)} title="Settings (⌘,)" aria-label="Settings">
+              <div className="nav-item-left">
+                <Settings size={17} />
+                {!collapsed && <span>Settings</span>}
+              </div>
+              {availableUpdate && (
+                <span className="update-dot" title={`Update v${availableUpdate.latestVersion} available`} />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </aside>
 
       <SettingsModal
         isOpen={isSettingsOpen}
@@ -160,6 +162,6 @@ export const Sidebar: React.FC = () => {
       {isProfileOpen && <ProfileModal onClose={() => setIsProfileOpen(false)} />}
 
       <UpdateModal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} initialUpdateInfo={availableUpdate} />
-    </aside>
+    </>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check } from 'lucide-react';
 import { useTracker } from '../../context/TrackerContext';
 
@@ -21,7 +22,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -70,9 +71,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
                     padding: '8px 0',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    background: currency === curr ? '#ffffff' : 'rgba(255,255,255,0.03)',
-                    color: currency === curr ? '#000000' : 'var(--text-secondary)',
-                    borderColor: currency === curr ? '#ffffff' : 'var(--border-subtle)',
+                    background: currency === curr ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255,255,255,0.03)',
+                    color: currency === curr ? '#ffffff' : 'var(--text-secondary)',
+                    borderColor: currency === curr ? 'rgba(255, 255, 255, 0.25)' : 'var(--border-subtle)',
+                    boxShadow: currency === curr ? '0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.25)' : 'none',
                   }}
                   onClick={() => setCurrency(curr)}
                 >
@@ -97,6 +99,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

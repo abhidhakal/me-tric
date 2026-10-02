@@ -132,6 +132,34 @@ export interface ActivityTrackerStatus {
   hasAccessibilityPermission: boolean;
 }
 
+export interface FocusSession {
+  id: string;
+  title: string;
+  goalId?: string;
+  targetMinutes: number;
+  actualDurationSeconds: number;
+  startedAt: string;
+  endedAt: string;
+  date: string; // YYYY-MM-DD
+  flowScore: number; // 0-100% deep work
+  contextSwitches: number;
+  appsUsed: { appName: string; durationSeconds: number; category: ActivityCategory }[];
+  completed: boolean;
+  notes?: string;
+  loggedAsAccomplishment?: boolean;
+}
+
+export interface SmartInsight {
+  id: string;
+  type: 'peak_time' | 'focus_multiplier' | 'switching_rate' | 'optimal_duration' | 'habit_impact';
+  title: string;
+  description: string;
+  metric?: string;
+  badge?: string;
+  confidence: 'high' | 'medium';
+  actionableRecommendation?: string;
+}
+
 export interface AppDatabase {
   version: number;
   profile: UserProfile;
@@ -142,6 +170,7 @@ export interface AppDatabase {
   reviews: Review[];
   reminders: Reminder[];
   settings: AppSettings;
+  focusSessions?: FocusSession[];
 }
 
 export interface TrendBucket {

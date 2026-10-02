@@ -320,9 +320,10 @@ export const OnboardingScreen: React.FC = () => {
                         style={{
                           padding: '10px 0',
                           fontSize: 'var(--fs-item)',
-                          background: currency === curr ? '#ffffff' : 'rgba(255,255,255,0.03)',
-                          color: currency === curr ? '#000000' : 'var(--text-secondary)',
-                          borderColor: currency === curr ? '#ffffff' : 'var(--border-subtle)',
+                          background: currency === curr ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255,255,255,0.03)',
+                          color: currency === curr ? '#ffffff' : 'var(--text-secondary)',
+                          borderColor: currency === curr ? 'rgba(255, 255, 255, 0.25)' : 'var(--border-subtle)',
+                          boxShadow: currency === curr ? '0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.25)' : 'none',
                           fontWeight: 700,
                           justifyContent: 'center',
                         }}

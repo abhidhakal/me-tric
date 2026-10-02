@@ -28,6 +28,7 @@ const userDataPath = path.join(app.getPath('appData'), 'MeTric');
 app.setPath('userData', userDataPath);
 
 const dbFilePath = path.join(userDataPath, 'database.json');
+const widgetFilePath = path.join(userDataPath, 'widget-data.json');
 const backupsDir = path.join(userDataPath, 'backups');
 
 const legacyPath = path.join(app.getPath('appData'), 'Personal KPI');
@@ -109,6 +110,20 @@ ipcMain.handle('storage:save', async (_, data: any) => {
 
 ipcMain.handle('storage:getDbPath', async () => {
   return dbFilePath;
+});
+
+export function writeWidgetData(payload: any) {
+  try {
+    ensureStorageDirs();
+    fs.writeFileSync(widgetFilePath, JSON.stringify(payload, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to write widget data', err);
+  }
+}
+
+ipcMain.handle('widget:sync', async (_, payload: any) => {
+  writeWidgetData(payload);
+  return true;
 });
 
 ipcMain.handle('storage:openFolder', async () => {
@@ -257,6 +272,17 @@ ipcMain.handle('app:quit', () => {
 ipcMain.handle('tray:hide', () => {
   if (trayWindow && !trayWindow.isDestroyed() && trayWindow.isVisible()) {
     trayWindow.hide();
+  }
+  return true;
+});
+
+ipcMain.handle('tray:setTitle', (_event, title: string) => {
+  if (tray && !tray.isDestroyed() && process.platform === 'darwin') {
+    try {
+      tray.setTitle(title ? ` ${title}` : '');
+    } catch (err) {
+      console.warn('Failed to set tray title:', err);
+    }
   }
   return true;
 });

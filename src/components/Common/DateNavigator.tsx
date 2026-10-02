@@ -284,10 +284,12 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
             left: 0,
             zIndex: 999,
             width: 250,
-            background: '#0d0d10',
-            border: '1px solid rgba(255, 255, 255, 0.14)',
+            background: 'var(--bg-elevated)',
+            backdropFilter: 'blur(28px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+            border: '1px solid var(--border-medium)',
             borderRadius: '14px',
-            boxShadow: '0 16px 48px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+            boxShadow: 'var(--shadow-lg), var(--card-inset-glow)',
             padding: 12,
             userSelect: 'none',
             animation: 'popoverFadeInUp 0.12s ease-out',
@@ -401,8 +403,9 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ className, style }
                     color: isSelected
                       ? '#000000'
                       : cDay.isCurrentMonth
-                      ? '#ffffff'
-                      : 'rgba(255, 255, 255, 0.25)',
+                      ? 'var(--text-primary)'
+                      : 'var(--text-muted)',
+                    boxShadow: isSelected ? '0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.8)' : 'none',
                     fontSize: 'var(--fs-caption)',
                     fontWeight: isSelected ? 700 : isDayToday ? 600 : 400,
                     cursor: 'pointer',

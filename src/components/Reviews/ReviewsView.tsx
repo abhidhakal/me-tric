@@ -123,10 +123,11 @@ export const ReviewsView: React.FC = () => {
                 key={p}
                 className="chip-btn"
                 style={{
-                  background: periodType === p ? '#ffffff' : 'transparent',
-                  color: periodType === p ? '#000000' : 'var(--text-secondary)',
-                  borderColor: periodType === p ? '#ffffff' : 'transparent',
-                  fontWeight: periodType === p ? 700 : 500,
+                  background: periodType === p ? 'rgba(255, 255, 255, 0.16)' : 'transparent',
+                  color: periodType === p ? '#ffffff' : 'var(--text-secondary)',
+                  borderColor: periodType === p ? 'rgba(255, 255, 255, 0.25)' : 'transparent',
+                  boxShadow: periodType === p ? '0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.25)' : 'none',
+                  fontWeight: periodType === p ? 600 : 500,
                   textTransform: 'capitalize',
                 }}
                 onClick={() => {

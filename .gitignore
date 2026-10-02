@@ -87,3 +87,5 @@ Thumbs.db
 *.swp
 .fleet/
 .zed/
+.claude/
+build/native/

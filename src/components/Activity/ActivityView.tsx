@@ -14,6 +14,8 @@ import { useTracker } from '../../context/TrackerContext';
 import { ActivityCategory } from '../../types';
 import { getTodayIso } from '../../utils/dateUtils';
 import { DateNavigator } from '../Common/DateNavigator';
+import { InsightsDeck } from './InsightsDeck';
+import { FocusHistoryList } from '../Focus/FocusHistoryList';
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return '0m';
@@ -186,6 +188,11 @@ export const ActivityView: React.FC = () => {
         </div>
       </div>
 
+      {/* Smart Insights & Correlation Engine */}
+      <div style={{ marginBottom: 24 }}>
+        <InsightsDeck />
+      </div>
+
       {/* Hourly Screen Time Bar Chart */}
       <div className="card-panel" style={{ marginBottom: 20 }}>
         <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
@@ -356,6 +363,9 @@ export const ActivityView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Focus Sessions on this date */}
+      <FocusHistoryList date={activeDate} />
 
       {/* Work Category Breakdown Panel */}
       <div className="card-panel" style={{ marginBottom: 20 }}>

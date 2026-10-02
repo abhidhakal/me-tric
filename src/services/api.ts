@@ -13,6 +13,7 @@ import {
   ReviewComputedStats,
   DailyActivitySummary,
   ActivityTrackerStatus,
+  FocusSession,
 } from '../types';
 
 /**
@@ -85,6 +86,11 @@ export interface TrackerApi {
     startDate: string,
     endDate: string
   ): Promise<ReviewComputedStats>;
+
+  // Focus Sessions
+  getFocusSessions(date?: string): Promise<FocusSession[]>;
+  saveFocusSession(session: FocusSession): Promise<FocusSession>;
+  deleteFocusSession(sessionId: string): Promise<boolean>;
 
   // Activity & Screen Time Tracking
   getActivitySummary(date?: string): Promise<DailyActivitySummary>;

@@ -5,6 +5,7 @@ import { getTodayIso } from '../../utils/dateUtils';
 import { OVER_STYLE, STEPS, useTodayMetrics } from './useTodayMetrics';
 import { RemindersSection } from './RemindersSection';
 import { DateNavigator } from '../Common/DateNavigator';
+import { FocusWidget } from '../Focus/FocusWidget';
 
 function getDynamicGreeting(name: string | undefined, activeDate: string, today: string): string {
   const firstName = name?.trim() ? name.trim().split(' ')[0] : 'there';
@@ -130,6 +131,13 @@ export const TodayView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Focus Mode Sprint Control */}
+      {activeDate === today && (
+        <div style={{ marginBottom: 20 }}>
+          <FocusWidget />
+        </div>
+      )}
 
       {/* Standalone Quick Log Field */}
       <form onSubmit={handleQuickAddEvent} style={{ display: 'flex', gap: 10, marginBottom: 20 }}>

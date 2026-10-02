@@ -2,7 +2,7 @@
 
 <p align="left">
   <strong>Personal KPI & Life Telemetry Platform.</strong><br>
-  A distraction-free, local-first macOS desktop application designed to translate high-level yearly ambition into daily pacing and execution.
+  A distraction-free, local-first desktop application for macOS and Windows designed to translate high-level yearly ambition into daily pacing and execution.
 </p>
 
 <p align="left">
@@ -61,11 +61,12 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 - Visual weekly trend tracks showing daily progress across Monday through Sunday.
 
 ### 100% Local-First & Private
-- Your data lives entirely on your machine in `~/Library/Application Support/MeTric/database.json`.
+- Your data lives entirely on your machine in `~/Library/Application Support/MeTric/database.json` (macOS) or `%APPDATA%\MeTric\database.json` (Windows).
 - Instant cold starts, zero latency, works completely offline without internet access.
 - One-click JSON backup export and import for seamless migrations.
 
-### Native macOS Craftsmanship
+### Native Desktop Craftsmanship
+- Runs on macOS and Windows, with a menu bar (macOS) / system tray (Windows) popover for quick logging.
 - Designed to respect macOS Human Interface Guidelines:
   - Sleek 38px native header height perfectly aligned with traffic light controls.
   - Borderless, floating main content workspace.
@@ -75,6 +76,8 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 ---
 
 ## Keyboard Shortcuts
+
+On Windows, use <kbd>Ctrl</kbd> in place of <kbd>⌘</kbd>.
 
 | Shortcut | Action |
 | :--- | :--- |
@@ -92,7 +95,7 @@ Zero cloud lock-in. Zero telemetry. Fast, offline, and native.
 
 ## Tech Stack
 
-* **Runtime**: Electron 44 (macOS arm64 / x64)
+* **Runtime**: Electron 44 (macOS arm64 / x64, Windows x64)
 * **Frontend**: React 19, TypeScript, Vite
 * **Styling**: Vanilla CSS with customized design tokens and system font stack
 * **Storage**: Local filesystem JSON adapter with browser LocalStorage fallback
@@ -122,7 +125,7 @@ npm install
 # Run the web dev server
 npm run dev
 
-# Run inside Electron on macOS
+# Run inside Electron
 npm run dev:electron
 ```
 
@@ -137,6 +140,15 @@ The compiled application bundle will be located at:
 ```
 release/mac-arm64/MeTric.app
 ```
+
+### Packaging for Windows
+
+```bash
+# Build the NSIS installer (x64)
+npm run build:win
+```
+
+The installer will be located at `release/MeTric-Windows-Setup.exe`.
 
 ---
 

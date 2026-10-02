@@ -63,13 +63,13 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup }) => {
                   style={{
                     position: 'absolute',
                     bottom: 'calc(100% + 4px)',
-                    background: '#18181b',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 8px 20px rgba(0,0,0,0.8)',
-                    borderRadius: 5,
-                    padding: '3px 7px',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-medium)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.85)',
+                    borderRadius: 6,
+                    padding: '4px 8px',
                     fontSize: 'var(--fs-caption)',
-                    color: '#ffffff',
+                    color: 'var(--text-primary)',
                     whiteSpace: 'nowrap',
                     zIndex: 20,
                     pointerEvents: 'none',
@@ -78,7 +78,7 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup }) => {
                 >
                   <div style={{ fontWeight: 700 }}>{b.label}</div>
                   {b.subLabel && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-muted)' }}>{b.subLabel}</div>}
-                  <div style={{ color: '#ffffff', marginTop: 1 }}>{b.value > 0 ? b.formattedValue : '0'}</div>
+                  <div style={{ color: '#ffffff', fontWeight: 600, marginTop: 1 }}>{b.value > 0 ? b.formattedValue : '0'}</div>
                 </div>
               )}
 
@@ -94,10 +94,10 @@ export const TrendBars: React.FC<TrendBarsProps> = ({ rollup }) => {
                     ? isHovered
                       ? '#ffffff'
                       : b.isCurrent
-                      ? 'linear-gradient(180deg, #ffffff, #a1a1aa)'
-                      : 'linear-gradient(180deg, #71717a, #3f3f46)'
+                      ? 'linear-gradient(180deg, #ffffff, rgba(255, 255, 255, 0.6))'
+                      : 'linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.2))'
                     : 'rgba(255, 255, 255, 0.05)',
-                  boxShadow: b.isCurrent && b.value > 0 ? '0 0 10px rgba(255, 255, 255, 0.3)' : 'none',
+                  boxShadow: b.isCurrent && b.value > 0 ? '0 0 12px rgba(255, 255, 255, 0.3)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               />

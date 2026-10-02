@@ -13,6 +13,7 @@ import {
   ReviewComputedStats,
   DailyActivitySummary,
   ActivityTrackerStatus,
+  FocusSession,
 } from '../types';
 import { TrackerApi } from './api';
 import { MacDiskStorageAdapter } from './storage';
@@ -34,6 +35,7 @@ export class LocalTrackerApi implements TrackerApi {
     }
 
     if (!this.db.reminders) this.db.reminders = [];
+    if (!this.db.focusSessions) this.db.focusSessions = [];
 
     // Built-in "Money Spent" predates the lower-is-better flag; it's a budget.
     const spent = this.db.metrics.find((m) => m.id === 'metric-spent');
@@ -484,6 +486,41 @@ export class LocalTrackerApi implements TrackerApi {
       idleSeconds: 0,
       hasAccessibilityPermission: false,
     };
+  }
+
+  // --- Focus Sessions ---
+  async getFocusSessions(date?: string): Promise<FocusSession[]> {
+    await this.ensureLoaded();
+    const list = this.db.focusSessions || [];
+    if (!date) return list;
+    return list.filter((s) => s.date === date);
+  }
+
+  async saveFocusSession(session: FocusSession): Promise<FocusSession> {
+    await this.ensureLoaded();
+    if (!this.db.focusSessions) {
+      this.db.focusSessions = [];
+    }
+    const idx = this.db.focusSessions.findIndex((s) => s.id === session.id);
+    if (idx >= 0) {
+      this.db.focusSessions[idx] = session;
+    } else {
+      this.db.focusSessions.unshift(session);
+    }
+    await MacDiskStorageAdapter.save(this.db);
+    return session;
+  }
+
+  async deleteFocusSession(sessionId: string): Promise<boolean> {
+    await this.ensureLoaded();
+    if (!this.db.focusSessions) return false;
+    const initialLen = this.db.focusSessions.length;
+    this.db.focusSessions = this.db.focusSessions.filter((s) => s.id !== sessionId);
+    if (this.db.focusSessions.length !== initialLen) {
+      await MacDiskStorageAdapter.save(this.db);
+      return true;
+    }
+    return false;
   }
 }
 
